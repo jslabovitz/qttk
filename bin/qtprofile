@@ -1,0 +1,216 @@
+#!/usr/bin/env ruby
+
+# system
+require 'pp'
+
+# gems
+require 'pathname3'
+
+# ours
+$LOAD_PATH.unshift(File.join(File.realpath(File.dirname($0)), '..', 'lib'))
+
+require 'quadtone'
+include Quadtone
+
+###
+
+options = {}
+
+while ARGV.first && ARGV.first[0] == '-'
+  case (option = ARGV.shift)
+  when '--no-install'
+    options[:no_install] = true
+  else
+    warn "Unknown option: #{option}"
+    exit 1
+  end
+end
+
+profile_name = ARGV.shift or begin
+  warn "Must specify profile name"
+  exit 1
+end
+
+printer = (ARGV.shift || ENV['PRINTER']) or begin
+  warn "Must specify printer, or set in $PRINTER environment variable"
+  exit 1
+end
+
+def wait_for_file(path, prompt)
+  until path.exist?
+    STDERR.puts
+    STDERR.puts "[waiting for #{path}]"
+    STDERR.print "#{prompt} [press return] "
+    STDIN.gets
+  end
+end
+
+=begin
+
+- initialize
+
+  - describe profile:
+    - name (paper, channels)
+    - printer (name)
+    - channels to be used
+
+=end
+
+profile = Profile.new(profile_name, printer)
+
+base_dir = Pathname.new('data') + profile.printer + profile.name
+base_dir.mkpath
+base_dir.chdir
+
+=begin
+
+- determine ink curves & limits
+
+  - create unlimited QTR target with defined channels
+  - print QTR target in QTR calibration mode @ 100%, measure target using MeasureTool
+  - analyze measured target
+    - build ink curves from samples
+    - calculate ink limits
+    - create chart of curves
+    - create initial QTR profile
+    - install as QTR curve
+
+=end
+
+qtr_unlimited_name = 'qtr-unlimited'
+
+qtr_unlimited_target_path = Pathname.new(qtr_unlimited_name + '.target.txt')
+qtr_unlimited_measured_path = Pathname.new(qtr_unlimited_name + '.measured.txt')
+
+unless qtr_unlimited_target_path.exist?
+  qtr_unlimited_target_curveset = CurveSet::QTR.new(CurveSet::QTR.all_channels - [:LLK, :M])
+  qtr_unlimited_target_curveset.generate
+  # qtr_unlimited_target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
+  qtr_unlimited_target = Target.new
+  oversample = 3
+  steps = qtr_unlimited_target.max_samples / (qtr_unlimited_target_curveset.num_channels * oversample)
+  qtr_unlimited_target_curveset.fill_target(qtr_unlimited_target, 
+    :steps => steps, 
+    :oversample => oversample)
+  qtr_unlimited_target.write_image_file(qtr_unlimited_target_path.with_extname('.tif'))
+  qtr_unlimited_target.write_cgats_file(qtr_unlimited_target_path)
+end
+
+wait_for_file(qtr_unlimited_measured_path, "print & measure target for #{qtr_unlimited_target_path} -- save data to #{qtr_unlimited_measured_path}")
+
+qtr_unlimited_measured_target = Target.from_cgats_file(qtr_unlimited_measured_path)
+qtr_unlimited_measured_curveset = CurveSet::QTR.from_samples(qtr_unlimited_measured_target.samples)
+qtr_unlimited_measured_curveset.write_svg_file(qtr_unlimited_measured_path.with_extname('.svg'), :normalize => true)
+qtr_unlimited_measured_curveset.trim_curves!
+
+=begin
+
+- determine ink curves
+
+  - create limited QTR target with defined channels
+  - print QTR target in QTR calibration mode @ 100%, measure target using MeasureTool
+  - analyze measured target
+    - build ink curves from samples
+    - create chart of curves
+    - create initial QTR profile
+    - install as QTR curve
+
+=end
+
+qtr_limited_name = 'qtr-limited'
+
+qtr_limited_target_path = Pathname.new(qtr_limited_name + '.target.txt')
+qtr_limited_measured_path = Pathname.new(qtr_limited_name + '.measured.txt')
+
+unless qtr_limited_target_path.exist?
+  qtr_limited_target_curveset = CurveSet::QTR.new(qtr_unlimited_measured_curveset.channels)
+  qtr_limited_target_curveset.generate
+  # qtr_limited_target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
+  qtr_limited_target = Target.new
+  oversample = 3
+  steps = qtr_limited_target.max_samples / (qtr_limited_target_curveset.num_channels * oversample)
+  qtr_limited_target_curveset.fill_target(qtr_limited_target, 
+    :steps => steps, 
+    :oversample => oversample, 
+    :limits => qtr_unlimited_measured_curveset.limits)
+  qtr_limited_target.write_image_file(qtr_limited_target_path.with_extname('.tif'))
+  qtr_limited_target.write_cgats_file(qtr_limited_target_path)
+end
+
+wait_for_file(qtr_limited_measured_path, "print & measure target for #{qtr_limited_target_path} -- save data to #{qtr_limited_measured_path}")
+
+qtr_limited_measured_target = Target.from_cgats_file(qtr_limited_measured_path)
+qtr_limited_measured_curveset = CurveSet::QTR.from_samples(qtr_limited_measured_target.samples)
+qtr_limited_measured_curveset.write_svg_file(qtr_limited_measured_path.with_extname('.svg'), :normalize => true)
+
+profile.unlimited_qtr_curveset = qtr_unlimited_measured_curveset
+profile.limited_qtr_curveset = qtr_limited_measured_curveset
+profile.install unless options[:no_install]
+
+=begin
+  
+- linearize grayscale
+
+  - create grayscale target
+  - print grayscale target image with QTR curve, measure target using MeasureTool
+  - analyze measured target
+    - build grayscale curve from samples
+    - add linearization to profile
+    - create final QTR profile
+    - install as QTR curve
+    - create chart of curves
+
+=end
+
+grayscale_name = 'grayscale'
+
+grayscale_target_path = Pathname.new(grayscale_name + '.target.txt')
+grayscale_measured_path = Pathname.new(grayscale_name + '.measured.txt')
+
+unless grayscale_target_path.exist?
+  grayscale_target_curveset = CurveSet::Grayscale.new
+  grayscale_target_curveset.generate
+  grayscale_target = Target.new
+  grayscale_target_curveset.fill_target(grayscale_target, :steps => 51, :oversample => 4)
+  grayscale_target.write_image_file(grayscale_target_path.with_extname('.tif'))
+  grayscale_target.write_cgats_file(grayscale_target_path)
+end
+
+wait_for_file(grayscale_measured_path, "print & measure target #{grayscale_target_path} -- save data to #{grayscale_measured_path}")
+
+grayscale_measured_target = Target.from_cgats_file(grayscale_measured_path)
+grayscale_measured_curveset = CurveSet::Grayscale.from_samples(grayscale_measured_target.samples)
+grayscale_measured_curveset.write_svg_file(grayscale_measured_path.with_extname('.svg'), :normalize => true)
+
+profile.grayscale_curveset = grayscale_measured_curveset
+profile.install unless options[:no_install]
+
+=begin
+
+- test linearization
+
+  - print grayscale target image with QTR curve, measure target using MeasureTool
+  - analyze measured target
+    - build grayscale curve from samples
+    - test for linear response
+
+  - store each test with timestamp
+  
+  - chart scale over time (with multiple tests)
+    - graph differences between values
+    - graph average dE
+      - see: http://cias.rit.edu/~gravure/tt/pdf/pc/TT5_Fred01.pdf (p. 34)
+  
+=end
+
+# test_grayscale_name = 'test-grayscale'
+# 
+# test_grayscale_measured_path = Pathname.new(test_grayscale_name + '.measured.txt')
+# 
+# wait_for_file(test_grayscale_measured_path, "print & measure target #{grayscale_target_path} -- save data to #{test_grayscale_measured_path}")
+# 
+# test_grayscale_measured_target = Target.from_cgats_file(test_grayscale_measured_path)
+# test_grayscale_measured_curveset = CurveSet::Grayscale.from_samples(test_grayscale_measured_target.samples)
+# test_grayscale_measured_curveset.write_svg_file(test_grayscale_measured_path.with_extname('.svg'), :normalize => true)
+
+#FIXME: See above

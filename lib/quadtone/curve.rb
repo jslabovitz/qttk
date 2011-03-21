@@ -1,0 +1,81 @@
+module Quadtone
+  
+  class Curve
+  
+    attr_accessor :key
+    attr_accessor :samples
+  
+    def initialize(key, samples)
+      @key = key
+      @samples = samples
+      build_spline
+    end
+  
+    def build_spline
+      @samples.sort_by! { |s| s.input.density }
+      if @samples.length >= 5
+        type = 'akima'
+      elsif @samples.length >= 3
+        type = 'cspline'
+      elsif @samples.length >= 2
+        type = 'linear'
+      else
+        raise "Need at least two samples: #{@samples.inspect}"
+      end
+      inputs = GSL::Vector[@samples.length]
+      outputs = GSL::Vector[@samples.length]
+      @samples.each_with_index do |sample, i|
+        inputs[i]  = sample.input.density
+        outputs[i] = sample.output ? sample.output.density : sample.input.density
+      end
+      @spline = GSL::Spline.alloc(type, inputs.dup, outputs.dup)
+    end
+  
+    def output_for_input(input_density)
+      @spline.eval(input_density)
+    end
+  
+    def trim!(resolution=20, min_density=0.1)
+      step_amount = 1.0 / resolution
+      (min_density..1).step(step_amount).each do |input_density|
+        delta_e = output_for_input(input_density + step_amount) - output_for_input(input_density)
+        if delta_e < 0.01
+          sample = @samples.find { |s| s.input.density > input_density }
+          i = @samples.index(sample)
+          ;;warn "#{key}: trimmed at first sample > #{input_density}: #{sample.input.density} (sample #{i})"
+          @samples.slice!(i..-1)
+          break
+        end
+      end
+    end
+  
+    def output_density_scale(steps=21)
+      step_amount = 1.0 / (steps - 1)
+      (0..max_output_density).step(step_amount).map do |input_density|
+        output_for_input(input_density)
+      end
+    end
+  
+    def dump
+      ;;warn "#{key}: " + @samples.map { |s| "%d,%d " % [s.input.density*100, s.output.density*100] }.join('')
+    end
+  
+    def max_input_density
+      @samples.map { |s| s.input.density }.max
+    end
+  
+    def max_output_density
+      @samples.map { |s| s.output.density }.max
+    end
+  
+    def find_relative_density(density, resolution=100)
+      input_density = (0..1).step(1.0 / resolution).find { |input_density| density <= output_for_input(input_density) }
+      #FIXME: Scale like this?
+      # ;;warn "scaling #{input_density} by #{max_input_density} => #{input_density * max_input_density}"
+      # input_density *= max_input_density
+      input_density
+    end
+  
+  end
+  
+end
