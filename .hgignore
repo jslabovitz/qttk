@@ -1,0 +1,5 @@
+syntax: glob
+.yardoc
+pkg/*
+syntax: regexp
+\.DS_Store
