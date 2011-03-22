@@ -14,12 +14,12 @@ end
 spec = Gem::Specification.new do |s|
 
   # Change these as appropriate
-  s.name              = 'quadtone'
+  s.name              = 'qttk'
   s.version           = '0.1.0'
-  s.summary           = "Tools for working with the quadtone printing process."
+  s.summary           = "Quadtone Toolkit (QTTK): Tools for working with the quadtone printing process."
   s.author            = 'John Labovitz'
   s.email             = 'johnl@johnlabovitz.com'
-  s.homepage          = 'https://bitbucket.org/jslabovitz/quadtone/src'
+  s.homepage          = 'https://bitbucket.org/jslabovitz/qttk/src'
 
   s.has_rdoc          = true
   # You should probably have a README of some kind. Change the filename
