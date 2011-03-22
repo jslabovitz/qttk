@@ -193,6 +193,7 @@ profile.install unless options[:no_install]
   - analyze measured target
     - build grayscale curve from samples
     - test for linear response
+    - show dMin/dMax, Lab curve
 
   - store each test with timestamp
   
