@@ -66,37 +66,35 @@ base_dir.chdir
 
 - determine ink curves & limits
 
-  - create unlimited QTR target with defined channels
-  - print QTR target in QTR calibration mode @ 100%, measure target using MeasureTool
+  - create unlimited QTR target reference with defined channels
+  - print QTR target in QTR calibration mode @ 100%, then measure target
   - analyze measured target
     - build ink curves from samples
     - calculate ink limits
     - create chart of curves
-    - create initial QTR profile
-    - install as QTR curve
 
 =end
 
 qtr_unlimited_name = 'qtr-unlimited'
 
-qtr_unlimited_target_path = Pathname.new(qtr_unlimited_name + '.target.txt')
+qtr_unlimited_reference_path = Pathname.new(qtr_unlimited_name + '.reference.txt')
 qtr_unlimited_measured_path = Pathname.new(qtr_unlimited_name + '.measured.txt')
 
-unless qtr_unlimited_target_path.exist?
-  qtr_unlimited_target_curveset = CurveSet::QTR.new(CurveSet::QTR.all_channels - [:LLK, :M])
-  qtr_unlimited_target_curveset.generate
-  # qtr_unlimited_target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
-  qtr_unlimited_target = Target.new
+unless qtr_unlimited_reference_path.exist?
+  qtr_unlimited_reference_curveset = CurveSet::QTR.new(CurveSet::QTR.all_channels - [:LLK, :M])
+  qtr_unlimited_reference_curveset.generate
+  # qtr_unlimited_reference_target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
+  qtr_unlimited_reference_target = Target.new
   oversample = 3
-  steps = qtr_unlimited_target.max_samples / (qtr_unlimited_target_curveset.num_channels * oversample)
-  qtr_unlimited_target_curveset.fill_target(qtr_unlimited_target, 
+  steps = qtr_unlimited_reference_target.max_samples / (qtr_unlimited_reference_curveset.num_channels * oversample)
+  qtr_unlimited_reference_curveset.fill_target(qtr_unlimited_reference_target, 
     :steps => steps, 
     :oversample => oversample)
-  qtr_unlimited_target.write_image_file(qtr_unlimited_target_path.with_extname('.tif'))
-  qtr_unlimited_target.write_cgats_file(qtr_unlimited_target_path)
+  qtr_unlimited_reference_target.write_image_file(qtr_unlimited_reference_path.with_extname('.tif'))
+  qtr_unlimited_reference_target.write_cgats_file(qtr_unlimited_reference_path)
 end
 
-wait_for_file(qtr_unlimited_measured_path, "print & measure target for #{qtr_unlimited_target_path} -- save data to #{qtr_unlimited_measured_path}")
+wait_for_file(qtr_unlimited_measured_path, "print & measure target for #{qtr_unlimited_reference_path} -- save data to #{qtr_unlimited_measured_path}")
 
 qtr_unlimited_measured_target = Target.from_cgats_file(qtr_unlimited_measured_path)
 qtr_unlimited_measured_curveset = CurveSet::QTR.from_samples(qtr_unlimited_measured_target.samples)
@@ -108,7 +106,7 @@ qtr_unlimited_measured_curveset.trim_curves!
 - determine ink curves
 
   - create limited QTR target with defined channels
-  - print QTR target in QTR calibration mode @ 100%, measure target using MeasureTool
+  - print QTR target in QTR calibration mode @ 100%, then measure target
   - analyze measured target
     - build ink curves from samples
     - create chart of curves
@@ -119,25 +117,25 @@ qtr_unlimited_measured_curveset.trim_curves!
 
 qtr_limited_name = 'qtr-limited'
 
-qtr_limited_target_path = Pathname.new(qtr_limited_name + '.target.txt')
+qtr_limited_reference_path = Pathname.new(qtr_limited_name + '.reference.txt')
 qtr_limited_measured_path = Pathname.new(qtr_limited_name + '.measured.txt')
 
-unless qtr_limited_target_path.exist?
-  qtr_limited_target_curveset = CurveSet::QTR.new(qtr_unlimited_measured_curveset.channels)
-  qtr_limited_target_curveset.generate
+unless qtr_limited_reference_path.exist?
+  qtr_limited_reference_curveset = CurveSet::QTR.new(qtr_unlimited_measured_curveset.channels)
+  qtr_limited_reference_curveset.generate
   # qtr_limited_target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
   qtr_limited_target = Target.new
   oversample = 3
-  steps = qtr_limited_target.max_samples / (qtr_limited_target_curveset.num_channels * oversample)
-  qtr_limited_target_curveset.fill_target(qtr_limited_target, 
+  steps = qtr_limited_target.max_samples / (qtr_limited_reference_curveset.num_channels * oversample)
+  qtr_limited_reference_curveset.fill_target(qtr_limited_target, 
     :steps => steps, 
     :oversample => oversample, 
     :limits => qtr_unlimited_measured_curveset.limits)
-  qtr_limited_target.write_image_file(qtr_limited_target_path.with_extname('.tif'))
-  qtr_limited_target.write_cgats_file(qtr_limited_target_path)
+  qtr_limited_target.write_image_file(qtr_limited_reference_path.with_extname('.tif'))
+  qtr_limited_target.write_cgats_file(qtr_limited_reference_path)
 end
 
-wait_for_file(qtr_limited_measured_path, "print & measure target for #{qtr_limited_target_path} -- save data to #{qtr_limited_measured_path}")
+wait_for_file(qtr_limited_measured_path, "print & measure target for #{qtr_limited_reference_path} -- save data to #{qtr_limited_measured_path}")
 
 qtr_limited_measured_target = Target.from_cgats_file(qtr_limited_measured_path)
 qtr_limited_measured_curveset = CurveSet::QTR.from_samples(qtr_limited_measured_target.samples)
@@ -152,7 +150,7 @@ profile.install unless options[:no_install]
 - linearize grayscale
 
   - create grayscale target
-  - print grayscale target image with QTR curve, measure target using MeasureTool
+  - print grayscale target image with QTR curve, then measure target
   - analyze measured target
     - build grayscale curve from samples
     - add linearization to profile
@@ -164,19 +162,19 @@ profile.install unless options[:no_install]
 
 grayscale_name = 'grayscale'
 
-grayscale_target_path = Pathname.new(grayscale_name + '.target.txt')
+grayscale_reference_path = Pathname.new(grayscale_name + '.reference.txt')
 grayscale_measured_path = Pathname.new(grayscale_name + '.measured.txt')
 
-unless grayscale_target_path.exist?
-  grayscale_target_curveset = CurveSet::Grayscale.new
-  grayscale_target_curveset.generate
+unless grayscale_reference_path.exist?
+  grayscale_reference_curveset = CurveSet::Grayscale.new
+  grayscale_reference_curveset.generate
   grayscale_target = Target.new
-  grayscale_target_curveset.fill_target(grayscale_target, :steps => 51, :oversample => 4)
-  grayscale_target.write_image_file(grayscale_target_path.with_extname('.tif'))
-  grayscale_target.write_cgats_file(grayscale_target_path)
+  grayscale_reference_curveset.fill_target(grayscale_target, :steps => 51, :oversample => 4)
+  grayscale_target.write_image_file(grayscale_reference_path.with_extname('.tif'))
+  grayscale_target.write_cgats_file(grayscale_reference_path)
 end
 
-wait_for_file(grayscale_measured_path, "print & measure target #{grayscale_target_path} -- save data to #{grayscale_measured_path}")
+wait_for_file(grayscale_measured_path, "print & measure target #{grayscale_reference_path} -- save data to #{grayscale_measured_path}")
 
 grayscale_measured_target = Target.from_cgats_file(grayscale_measured_path)
 grayscale_measured_curveset = CurveSet::Grayscale.from_samples(grayscale_measured_target.samples)
@@ -189,7 +187,7 @@ profile.install unless options[:no_install]
 
 - test linearization
 
-  - print grayscale target image with QTR curve, measure target using MeasureTool
+  - print grayscale target image with QTR curve, then measure target
   - analyze measured target
     - build grayscale curve from samples
     - test for linear response
@@ -208,7 +206,7 @@ profile.install unless options[:no_install]
 # 
 # test_grayscale_measured_path = Pathname.new(test_grayscale_name + '.measured.txt')
 # 
-# wait_for_file(test_grayscale_measured_path, "print & measure target #{grayscale_target_path} -- save data to #{test_grayscale_measured_path}")
+# wait_for_file(test_grayscale_measured_path, "print & measure target #{grayscale_reference_path} -- save data to #{test_grayscale_measured_path}")
 # 
 # test_grayscale_measured_target = Target.from_cgats_file(test_grayscale_measured_path)
 # test_grayscale_measured_curveset = CurveSet::Grayscale.from_samples(test_grayscale_measured_target.samples)
