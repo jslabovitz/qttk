@@ -16,10 +16,10 @@ spec = Gem::Specification.new do |s|
   # Change these as appropriate
   s.name              = 'quadtone'
   s.version           = '0.1.0'
-  s.summary           = "What this thing does"
+  s.summary           = "Tools for working with the quadtone printing process."
   s.author            = 'John Labovitz'
   s.email             = 'johnl@johnlabovitz.com'
-  # s.homepage          = 'http://yoursite.example.com'
+  s.homepage          = 'https://bitbucket.org/jslabovitz/quadtone/src'
 
   s.has_rdoc          = true
   # You should probably have a README of some kind. Change the filename
