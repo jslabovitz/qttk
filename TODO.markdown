@@ -4,12 +4,7 @@
 ## Now
 
 - Push repo to Bitbucket.
-  - In your local repository, you will find a directory named ".hg". Inside this directory, there should be a file named "hgrc". Edit this file (create it if it does not exist) and add:
-
-      [paths]
-      default = ssh://hg@hg.bitbucket.org/you/your_repo
-      When you do a push or pull, this repository will automatically be used from now.
-  - enable wiki
+- Enable wiki.
 - Write skeletal README:
   - basic description
   - goals of project
