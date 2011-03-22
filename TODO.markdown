@@ -3,8 +3,6 @@
 
 ## Now
 
-- Push repo to Bitbucket.
-- Enable wiki.
 - Write skeletal README:
   - basic description
   - goals of project
@@ -41,6 +39,7 @@
 - Display densities using log scale?
 - Test/rewrite 'add-printer':
   - Use CupsFFI instead of shelling out to 'lpadmin', etc.?
+- Figure out why ColorPort fails to read our reference target file.
 
 
 ## Later
