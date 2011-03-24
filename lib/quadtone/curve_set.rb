@@ -45,8 +45,8 @@ module Quadtone
         end
         curve_key = :P if input.density == 0
         output = output.to_grayscale
-        # output.l = 100 if output.l > 100
-        # output.l =   0 if output.l < 0
+        # output.g = 1 if output.g > 1
+        # output.g = 0 if output.g < 0
         values[curve_key] ||= {}
         values[curve_key][input] ||= []
         values[curve_key][input] << output
@@ -113,7 +113,7 @@ module Quadtone
             xml.circle(:cx => size * sample.input.density, :cy => size * (1 - sample.output.density), :r => 2, :fill => 'red', :stroke => 'none')
           end
           # draw interpolated curve
-          points = (0..1).step(1.0 / size).map do |input_density|
+          points = (0..curve.max_input_density).step(1.0 / size).map do |input_density|
             output_density = curve.output_for_input(input_density)
             [size * input_density, size * (1 - output_density)]
           end
