@@ -9,6 +9,7 @@ subcommands = {
   'profile'     => ProfileTool,
   'separate'    => SeparateTool,
   'add-printer' => AddPrinterTool,
+  'dump'        => DumpTool,
 }
 
 begin
