@@ -110,14 +110,14 @@ module Quadtone
           xml.line(:x1 => 0, :y1 => size, :x2 => size, :y2 => 0)
         end
         curves_by_channel.each do |curve|
-          points = curve.samples.map do |sample|
-            output_density = sample.output.density
-            if normalize
-              output_density -= @paper_sample.output.density
-              # output_density /= curve.max_output_density - @paper_sample.output.density
-              output_density *= curve.max_input_density
-            end
-            [size * sample.input.density, size * (1 - output_density)]
+          # draw individual samples
+          curve.samples.each do |sample|
+            xml.circle(:cx => size * sample.input.density, :cy => size * (1 - sample.output.density), :r => 2, :fill => 'red', :stroke => 'none')
+          end
+          # draw interpolated curve
+          points = (0..1).step(1.0 / size).map do |input_density|
+            output_density = curve.output_for_input(input_density)
+            [size * input_density, size * (1 - output_density)]
           end
           xml.polyline(
             :fill => 'none', 
@@ -166,6 +166,12 @@ module Quadtone
   
     def density_scale(steps=21, range=0..1)
       range.step(1.0 / (steps - 1)).to_a
+    end
+    
+    def dump
+      @curves.each do |curve|
+        curve.dump
+      end
     end
   
     class QTR < CurveSet
