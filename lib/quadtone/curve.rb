@@ -48,16 +48,21 @@ module Quadtone
         end
       end
     end
-  
-    def output_density_scale(steps=21)
+    
+    def resample(steps=21)
       step_amount = 1.0 / (steps - 1)
-      (0..max_output_density).step(step_amount).map do |input_density|
-        output_for_input(input_density)
+      new_samples = (0..1).step(step_amount).map do |input_density|
+        Sample.new(Color::GrayScale.from_density(input_density), Color::GrayScale.from_density(output_for_input(input_density)))
       end
+      self.class.new(@key, new_samples)
     end
-  
+    
+    def num_samples
+      @samples.length
+    end
+    
     def dump
-      ;;warn "#{key}: " + @samples.map { |s| "%d,%d " % [s.input.density*100, s.output.density*100] }.join('')
+      ;;warn "#{key}: (#{@samples.length}) " + @samples.map { |s| "%11s" % [s.input.density, s.output.density, output_for_input(s.input.density)].map { |n| (n*100).to_i }.join('/') }.join(' ')
     end
   
     def max_input_density

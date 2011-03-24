@@ -47,8 +47,8 @@ module Quadtone
     
       if @grayscale_curveset
         stanzas << (stanza = [])
-        # FIXME -- density scale is not right -- last value should be more like 18, not 22
-        stanza << "LINEARIZE=\"#{@grayscale_curveset.curves.first.output_density_scale(21).map { |d| (1 - d) * 100 }.join(' ')}\""
+        samples = @grayscale_curveset.curves.first.resample(21).samples
+        stanza << "LINEARIZE=\"#{samples.map { |s| (1 - s.output.density) * 100 }.join(' ')}\""
       end
 
       stanzas.each do |stanza|
