@@ -101,8 +101,6 @@ module Quadtone
   
     def to_svg(options={})
       size = options[:size] || 500
-      # normalize = options[:normalize] || false
-      ;;normalize = false
       xml = Builder::XmlMarkup.new(:indent => 2)
       xml.g(:width => size, :height => size) do
         xml.g(:stroke => 'blue') do

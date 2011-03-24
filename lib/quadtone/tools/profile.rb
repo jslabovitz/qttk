@@ -76,7 +76,7 @@ module Quadtone
 
       qtr_unlimited_measured_target = Target.from_cgats_file(qtr_unlimited_measured_path)
       qtr_unlimited_measured_curveset = CurveSet::QTR.from_samples(qtr_unlimited_measured_target.samples)
-      qtr_unlimited_measured_curveset.write_svg_file(qtr_unlimited_measured_path.with_extname('.svg'), :normalize => true)
+      qtr_unlimited_measured_curveset.write_svg_file(qtr_unlimited_measured_path.with_extname('.svg'))
       qtr_unlimited_measured_curveset.trim_curves!
 
       # - determine ink curves
@@ -113,7 +113,7 @@ module Quadtone
 
       qtr_limited_measured_target = Target.from_cgats_file(qtr_limited_measured_path)
       qtr_limited_measured_curveset = CurveSet::QTR.from_samples(qtr_limited_measured_target.samples)
-      qtr_limited_measured_curveset.write_svg_file(qtr_limited_measured_path.with_extname('.svg'), :normalize => true)
+      qtr_limited_measured_curveset.write_svg_file(qtr_limited_measured_path.with_extname('.svg'))
 
       profile.unlimited_qtr_curveset = qtr_unlimited_measured_curveset
       profile.limited_qtr_curveset = qtr_limited_measured_curveset
@@ -148,7 +148,7 @@ module Quadtone
 
       grayscale_measured_target = Target.from_cgats_file(grayscale_measured_path)
       grayscale_measured_curveset = CurveSet::Grayscale.from_samples(grayscale_measured_target.samples)
-      grayscale_measured_curveset.write_svg_file(grayscale_measured_path.with_extname('.svg'), :normalize => true)
+      grayscale_measured_curveset.write_svg_file(grayscale_measured_path.with_extname('.svg'))
 
       profile.grayscale_curveset = grayscale_measured_curveset
       profile.install unless options[:no_install]
@@ -176,7 +176,7 @@ module Quadtone
       # 
       # test_grayscale_measured_target = Target.from_cgats_file(test_grayscale_measured_path)
       # test_grayscale_measured_curveset = CurveSet::Grayscale.from_samples(test_grayscale_measured_target.samples)
-      # test_grayscale_measured_curveset.write_svg_file(test_grayscale_measured_path.with_extname('.svg'), :normalize => true)
+      # test_grayscale_measured_curveset.write_svg_file(test_grayscale_measured_path.with_extname('.svg'))
 
       #FIXME: See above
     end
