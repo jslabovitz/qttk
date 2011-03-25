@@ -4,19 +4,26 @@ include Quadtone
 module Quadtone
 
   class AddPrinterTool < Tool
-  
-    def run(args)
+    
+    attr_accessor :printer
+    
+    def self.parse_args(args)
+      options = super
       printer = args.shift or raise ToolUsageError, "Must specify printer name to create"
-
-      unless %x{lpstat -v #{printer}}.empty?
-        raise ToolUsageError, "Printer #{printer.inspect} already exists"
+      options[:printer] = printer
+      options
+    end
+    
+    def run
+      unless %x{lpstat -v #{@printer} 2>/dev/null}.empty?
+        raise ToolUsageError, "Printer #{@printer.inspect} already exists"
       end
 
       curves_dir          = Pathname.new('/Library/Printers/QTR/quadtone') + printer
       cups_data_dir       = Pathname.new(%x{cups-config --datadir}.chomp)
       cups_serverbin_dir  = Pathname.new(%x{cups-config --serverbin}.chomp)
     
-      model = printer.split(/[-_=]/).first
+      model = @printer.split(/[-_=]/).first
       model_ppd = "C/#{model}.ppd.gz"
       ppd_file = cups_data_dir + 'model' + model_ppd
     
@@ -50,9 +57,9 @@ module Quadtone
         end
       end
 
-      warn "Creating printer #{printer.inspect}"
+      warn "Creating printer #{@printer.inspect}"
       system('lpadmin',
-        '-p', printer, 
+        '-p', @printer, 
         '-E',
         '-m', model_ppd,
         '-L', loc,

@@ -14,9 +14,9 @@ subcommands = {
 
 begin
   subcmd = ARGV.shift or raise ToolUsageError, "No subcommand specified"
-  #FIXME: Parse sub-arguments
   subcmd_class = subcommands[subcmd] or raise ToolUsageError, "Unknown subcommand specified"
-  subcmd_class.new.run(ARGV)
+  options = subcmd_class.parse_args(ARGV)
+  subcmd_class.new(options).run
 rescue ToolUsageError => e
   warn e
   exit 1

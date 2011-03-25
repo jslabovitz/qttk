@@ -5,31 +5,26 @@ module Quadtone
   
   class ProfileTool < Tool
   
-    def run(args)
-
-      options = {}
-
-      while args.first && args.first[0] == '-'
-        case (option = args.shift)
+    attr_accessor :no_install
+    attr_accessor :profile_name
+    attr_accessor :printer
+    
+    def self.parse_args(args)
+      options = super
+      process_options(args) do |option, args|
+        case option
         when '--no-install'
           options[:no_install] = true
         else
           raise ToolUsageError, "Unknown option: #{option}"
         end
       end
-
-      profile_name = args.shift or raise ToolUsageError, "Must specify profile name"
-
-      printer = (args.shift || ENV['PRINTER']) or raise ToolUsageError, "Must specify printer, or set in $PRINTER environment variable"
-
-      def wait_for_file(path, prompt)
-        until path.exist?
-          STDERR.puts
-          STDERR.puts "[waiting for #{path}]"
-          STDERR.print "#{prompt} [press return] "
-          STDIN.gets
-        end
-      end
+      options[:profile_name] = args.shift or raise ToolUsageError, "Must specify profile name"
+      options[:printer] = (args.shift || ENV['PRINTER']) or raise ToolUsageError, "Must specify printer, or set in $PRINTER environment variable"
+      options
+    end
+  
+    def run
 
       # - initialize
       # 
@@ -38,7 +33,7 @@ module Quadtone
       #     - printer (name)
       #     - channels to be used
 
-      profile = Profile.new(profile_name, printer)
+      profile = Profile.new(@profile_name, @printer)
 
       base_dir = Pathname.new('data') + profile.printer + profile.name
       base_dir.mkpath
@@ -117,7 +112,7 @@ module Quadtone
 
       profile.unlimited_qtr_curveset = qtr_unlimited_measured_curveset
       profile.limited_qtr_curveset = qtr_limited_measured_curveset
-      profile.install unless options[:no_install]
+      profile.install unless @no_install
 
       # - linearize grayscale
       # 
@@ -151,7 +146,7 @@ module Quadtone
       grayscale_measured_curveset.write_svg_file(grayscale_measured_path.with_extname('.svg'))
 
       profile.grayscale_curveset = grayscale_measured_curveset
-      profile.install unless options[:no_install]
+      profile.install unless @no_install
     
       # - test linearization
       # 
@@ -181,6 +176,15 @@ module Quadtone
       #FIXME: See above
     end
   
+    def wait_for_file(path, prompt)
+      until path.exist?
+        STDERR.puts
+        STDERR.puts "[waiting for #{path}]"
+        STDERR.print "#{prompt} [press return] "
+        STDIN.gets
+      end
+    end
+    
   end
   
 end

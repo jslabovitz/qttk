@@ -5,26 +5,40 @@ module Quadtone
   
   class SeparateTool < Tool
   
-    def run(args)
-      montage = nil
-
-      quad_file = args.shift or raise ToolUsageError, "Must specify quad curves file"
+    attr_accessor :quad_file
+    attr_accessor :montage
+    attr_accessor :gradient
+    attr_accessor :image_file
     
-      quad_file = Pathname.new(quad_file)
-
-      quad = QuadCurves.from_file(quad_file)
-
-      if args.first == '--montage'
-        args.shift
-        montage = true
+    def self.parse_args(args)
+      options = super
+      options[:quad_file] = args.shift or raise ToolUsageError, "Must specify quad curves file"
+      process_options(args) do |option, args|
+        case option
+        when '--montage'
+          options[:montage] = true
+        when '--gradient'
+          options[:gradient] = true
+        else
+          raise ToolUsageError, "Unknown option: #{option}"
+        end
       end
-
-      if args.first == '--gradient'
+      unless options[:gradient]
+        options[:image_file] = args.shift or raise ToolUsageError, "Must specify image file (or --gradient option)"
+      end
+      options
+    end
+    
+    def run
+      @quad_file = Pathname.new(@quad_file)
+      
+      quad = QuadCurves.from_file(@quad_file)
+      if @gradient
         image_file = Pathname.new('gradient.tif')
         image = Magick::Image.new(200, 200, Magick::GradientFill.new(0, 0, 0, 200, 'white', 'black'))
       else
-        image_file = Pathname.new(args.shift)
-        image = Magick::Image.read(image_file).first
+        @image_file = Pathname.new(@image_file)
+        image = Magick::Image.read(@image_file).first
       end
 
       quad_name = quad_file.basename.sub(/#{Regexp.quote(quad_file.extname)}/, '')
