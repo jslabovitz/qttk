@@ -3,18 +3,15 @@
 
 ## Now
 
-- Remove hardcoded/assumptions from 'profile' tool (eg, 'data' directory, paper sizes).
-- Create profile description file (profile.yaml?) to store profile-related metadata.
-  - Use $PRINTER, but only for initial creation.
+- Remove hardcoded/assumptions from 'profile' tool (eg, inks, paper sizes).
 - Verify limiting/separation algorithms.
-
+- Require specific versions in gemspec.
 
 ## Soon
 
 - Add option to normalize curves in charts.
 - Create guide for process (on wiki).
 - Document classes.
-- Determine if it's possible to only need one QTR calibration target (wide scale with unlimited inks).
 - Add confirmation/testing step to profiling:
   - Show actual tonal response curve.
   - Show dMin/dMax.
