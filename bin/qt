@@ -6,10 +6,12 @@ require 'quadtone'
 include Quadtone
 
 subcommands = {
-  'profile'     => ProfileTool,
-  'separate'    => SeparateTool,
-  'add-printer' => AddPrinterTool,
-  'dump'        => DumpTool,
+  'add-printer'   => AddPrinterTool,
+  'characterize'  => CharacterizeTool,
+  'dump'          => DumpTool,
+  'init'          => InitTool,
+  'linearize'     => LinearizeTool,
+  'separate'      => SeparateTool,
 }
 
 begin
