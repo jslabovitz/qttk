@@ -8,10 +8,14 @@ module Quadtone
     def initialize(key, samples)
       @key = key
       @samples = samples
-      build_spline
+      build_spline!
     end
-  
-    def build_spline
+    
+    def to_yaml_properties
+      super - [:@spline]
+    end
+    
+    def build_spline!
       @samples.sort_by! { |s| s.input.density }
       if @samples.length >= 5
         type = 'akima'
@@ -32,6 +36,7 @@ module Quadtone
     end
   
     def output_for_input(input_density)
+      build_spline! unless @spline
       @spline.eval(input_density)
     end
   
@@ -50,8 +55,8 @@ module Quadtone
     end
     
     def resample(steps=21)
-      step_amount = 1.0 / (steps - 1)
-      new_samples = (0..1).step(step_amount).map do |input_density|
+      step_amount = max_input_density / (steps - 1)
+      new_samples = (0..max_input_density).step(step_amount).map do |input_density|
         Sample.new(Color::GrayScale.from_density(input_density), Color::GrayScale.from_density(output_for_input(input_density)))
       end
       self.class.new(@key, new_samples)

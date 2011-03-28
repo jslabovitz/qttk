@@ -122,6 +122,17 @@ module Quadtone
             :stroke => 'black', 
             :'stroke-width' => 1,
             :points => points.map { |pt| pt.join(',') }.join(' '))
+          # draw interpolated curve based on fewer points
+          smoothed_curve = curve.resample(21)
+          points = (0..smoothed_curve.max_input_density).step(1.0 / size).map do |input_density|
+            output_density = smoothed_curve.output_for_input(input_density)
+            [size * input_density, size * (1 - output_density)]
+          end
+          xml.polyline(
+            :fill => 'none', 
+            :stroke => 'green', 
+            :'stroke-width' => 1,
+            :points => points.map { |pt| pt.join(',') }.join(' '))
         end
       end
       xml.target!

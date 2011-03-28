@@ -1,5 +1,6 @@
 # system
 require 'pp'
+require 'yaml'
 
 # gems
 require 'color'
@@ -23,7 +24,10 @@ require 'quadtone/sample'
 require 'quadtone/separator'
 require 'quadtone/target'
 require 'quadtone/tool'
-require 'quadtone/tools/dump'
-require 'quadtone/tools/profile'
-require 'quadtone/tools/separate'
 require 'quadtone/tools/add_printer'
+require 'quadtone/tools/characterize'
+require 'quadtone/tools/dump'
+require 'quadtone/tools/init'
+require 'quadtone/tools/linearize'
+require 'quadtone/tools/separate'
+require 'quadtone/tools/test'
