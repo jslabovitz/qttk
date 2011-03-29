@@ -3,23 +3,12 @@
 $LOAD_PATH.unshift(File.join(File.realpath(File.dirname($0)), '..', 'lib'))
 
 require 'quadtone'
-include Quadtone
 
-subcommands = {
-  'add-printer'   => AddPrinterTool,
-  'characterize'  => CharacterizeTool,
-  'dump'          => DumpTool,
-  'init'          => InitTool,
-  'linearize'     => LinearizeTool,
-  'separate'      => SeparateTool,
-}
-
-begin
-  subcmd = ARGV.shift or raise ToolUsageError, "No subcommand specified"
-  subcmd_class = subcommands[subcmd] or raise ToolUsageError, "Unknown subcommand specified"
-  options = subcmd_class.parse_args(ARGV)
-  subcmd_class.new(options).run
-rescue ToolUsageError => e
-  warn e
-  exit 1
-end
+Quadtone::Tool.process_args(ARGV,
+  'add-printer'   => Quadtone::AddPrinterTool,
+  'characterize'  => Quadtone::CharacterizeTool,
+  'dump'          => Quadtone::DumpTool,
+  'init'          => Quadtone::InitTool,
+  'linearize'     => Quadtone::LinearizeTool,
+  'separate'      => Quadtone::SeparateTool,
+)
