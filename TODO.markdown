@@ -3,16 +3,16 @@
 
 ## Now
 
-- Remove hardcoded/assumptions from 'profile' tool (eg, inks, paper sizes).
+- Remove hardcoded/assumptions (eg, inks, paper sizes).
 - Verify limiting/separation algorithms.
-- Require specific versions in gemspec.
+
 
 ## Soon
 
 - Add option to normalize curves in charts.
 - Create guide for process (on wiki).
 - Document classes.
-- Add confirmation/testing step to profiling:
+ - Add confirmation/testing step to profiling:
   - Show actual tonal response curve.
   - Show dMin/dMax.
   - Show Lab curve (eg, ink color).
@@ -25,7 +25,8 @@
 - Test/rewrite 'add-printer':
   - Use CupsFFI instead of shelling out to 'lpadmin', etc.?
 - Figure out why ColorPort fails to read our reference target file.
-
+- Move gemspec out of Rakefile and into .gemspec
+  - see: http://timelessrepo.com/use-the-gemspec
 
 ## Later
 
