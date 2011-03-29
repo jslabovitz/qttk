@@ -22,8 +22,6 @@ module Quadtone
     
     def initialize(params={})
       @base_dir = Pathname.new('.')
-      @name = name
-      @printer = printer
       @default_ink_limit = 1
       @gray_highlight = 6
       @gray_shadow = 6

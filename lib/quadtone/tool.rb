@@ -7,6 +7,19 @@ module Quadtone
     attr_accessor :profile_dir
     attr_accessor :no_install
     
+    def self.process_args(args, subcommands)
+      begin
+        subcmd = args.shift or raise ToolUsageError, "No subcommand specified"
+        subcmd_class = subcommands[subcmd] or raise ToolUsageError, "Unknown subcommand specified"
+        options = subcmd_class.parse_args(args)
+        raise ToolUsageError, "Extra arguments specified but unused: #{args.join(', ')}" if args.length > 0
+        subcmd_class.new(options).run
+      rescue ToolUsageError => e
+        warn e
+        exit 1
+      end
+    end
+    
     def self.process_options(args, &block)
       while args.first && args.first[0] == '-'
         yield(args.shift, args)
