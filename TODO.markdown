@@ -9,6 +9,19 @@
 
 ## Soon
 
+- Create test images for linearization/test page:
+  - Radial gradient (stepped, smooth)
+  - Linear gradient (stepped, smooth)
+  - Charts for final curves?
+- Let test targets cross multiple pages:
+  - Calculate rows per page.
+- Add info banner to target:
+  - Mode (characterization, linearization, etc.)
+  - Date
+  - Profile info (printer, paper, inks)
+- Ignore linearization measurement if file older than characterization.
+- Don't save characterization/linearization data in profile?
+  - Instead, always read from measurements file.
 - Add option to normalize curves in charts.
 - Create guide for process (on wiki).
 - Document classes.
