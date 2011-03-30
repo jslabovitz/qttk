@@ -104,35 +104,43 @@ module Quadtone
       xml = Builder::XmlMarkup.new(:indent => 2)
       xml.g(:width => size, :height => size) do
         xml.g(:stroke => 'blue') do
-          xml.rect(:x => 0, :y => 0, :width => size, :height => size, :fill => 'none', :stroke => 'blue', :'stroke-width' => 1)
-          xml.line(:x1 => 0, :y1 => size, :x2 => size, :y2 => 0)
+          xml.rect(:x => 0, :y => 0, :width => size, :height => size, :fill => 'none', :'stroke-width' => 1)
+          xml.line(:x1 => 0, :y1 => size, :x2 => size, :y2 => 0, :'stroke-width' => 0.5)
         end
         curves_by_channel.each do |curve|
+
           # draw individual samples
           curve.samples.each do |sample|
             xml.circle(:cx => size * sample.input.density, :cy => size * (1 - sample.output.density), :r => 2, :fill => 'red', :stroke => 'none')
           end
-          # draw interpolated curve
-          points = (0..curve.max_input_density).step(1.0 / size).map do |input_density|
-            output_density = curve.output_for_input(input_density)
-            [size * input_density, size * (1 - output_density)]
-          end
-          xml.polyline(
-            :fill => 'none', 
-            :stroke => 'black', 
-            :'stroke-width' => 1,
-            :points => points.map { |pt| pt.join(',') }.join(' '))
+
+          # # draw interpolated curve
+          # points = (0..curve.max_input_density).step(1.0 / size).map do |input_density|
+          #   output_density = curve.output_for_input(input_density)
+          #   [size * input_density, size * (1 - output_density)]
+          # end
+          # xml.polyline(
+          #   :fill => 'none', 
+          #   :stroke => 'black', 
+          #   :'stroke-width' => 1,
+          #   :points => points.map { |pt| pt.join(',') }.join(' '))
+
           # draw interpolated curve based on fewer points
           smoothed_curve = curve.resample(21)
           points = (0..smoothed_curve.max_input_density).step(1.0 / size).map do |input_density|
             output_density = smoothed_curve.output_for_input(input_density)
             [size * input_density, size * (1 - output_density)]
           end
-          xml.polyline(
-            :fill => 'none', 
-            :stroke => 'green', 
-            :'stroke-width' => 1,
-            :points => points.map { |pt| pt.join(',') }.join(' '))
+          xml.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
+            xml.polyline(:points => points.map { |pt| pt.join(',') }.join(' '))
+          end
+            
+          # draw marker for dMax
+          limit = curve.ink_limit
+          point = [size * limit.input.density, size * (1 - limit.output.density)]
+          xml.g(:stroke => 'green', :'stroke-width' => 2) do
+            xml.line(:x1 => point[0], :y1 => point[1] + 8, :x2 => point[0], :y2 => point[1] - 8)
+          end
         end
       end
       xml.target!

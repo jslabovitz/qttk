@@ -39,19 +39,25 @@ module Quadtone
       build_spline! unless @spline
       @spline.eval(input_density)
     end
-  
-    def trim!(resolution=20, min_density=0.1)
+
+    def ink_limit(resolution=20, min_density=0.1)
       step_amount = 1.0 / resolution
       (min_density..1).step(step_amount).each do |input_density|
-        delta_e = output_for_input(input_density + step_amount) - output_for_input(input_density)
+        output_density = output_for_input(input_density)
+        next_output_density = output_for_input(input_density + step_amount)
+        delta_e = next_output_density - output_density
         if delta_e < 0.01
-          sample = @samples.find { |s| s.input.density > input_density }
-          i = @samples.index(sample)
-          ;;warn "#{key}: trimmed at first sample > #{input_density}: #{sample.input.density} (sample #{i})"
-          @samples.slice!(i..-1)
-          break
+          return Sample.new(Color::GrayScale.from_density(input_density), Color::GrayScale.from_density(output_density))
         end
       end
+    end
+    
+    def trim!(resolution=20, min_density=0.1)
+      limit = ink_limit(resolution, min_density) or raise "Can't find ink limit for #{key}"
+      sample = @samples.find { |s| s.input.density > limit.input.density }
+      i = @samples.index(sample)
+      ;;warn "#{key}: trimmed at first sample > #{limit.input.density}: #{sample.input.density} (sample #{i})"
+      @samples.slice!(i..-1)
     end
     
     def resample(steps=21)
