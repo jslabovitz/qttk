@@ -38,9 +38,9 @@ module Quadtone
       reference_path = @base_dir + 'characterization.reference.txt'
       reference_curveset = CurveSet::QTR.new(@inks)
       reference_curveset.generate
-      # reference_target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
-      target = Target.new
-      oversample = 3
+      target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
+      # target = Target.new
+      oversample = 4
       steps = target.max_samples / (reference_curveset.num_channels * oversample)
       reference_curveset.fill_target(target, :steps => steps, :oversample => oversample)
       target.write_image_file(reference_path.with_extname('.tif'))

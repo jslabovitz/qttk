@@ -5,14 +5,20 @@
 
 - Remove hardcoded/assumptions (eg, inks, paper sizes).
 - Verify limiting/separation algorithms.
+  - Generate sample data.
+  - Write tests to verify operations.
 
 
 ## Soon
 
-- Create test images for linearization/test page:
-  - Radial gradient (stepped, smooth)
-  - Linear gradient (stepped, smooth)
-  - Charts for final curves?
+- Rework Curve class:
+  - Store values as simple floats expressing density.
+  - Add new class to replace Sample.
+- Rework CurveSet class:
+  - When reading samples, convert Lab to QTR.
+- Make Target & Sample classes more generic:
+  - Limit color knowledge to grayscale, RGB, and Lab.
+  - Rename Sample class to Target::Sample.
 - Let test targets cross multiple pages:
   - Calculate rows per page.
 - Add info banner to target:
@@ -23,12 +29,15 @@
 - Don't save characterization/linearization data in profile?
   - Instead, always read from measurements file.
 - Add option to normalize curves in charts.
-- Create guide for process (on wiki).
-- Document classes.
- - Add confirmation/testing step to profiling:
+- Add confirmation/testing step to profiling:
+  - To test ink settling, sample fading, etc.
   - Show actual tonal response curve.
   - Show dMin/dMax.
   - Show Lab curve (eg, ink color).
+  - Show test images:
+    - Radial gradient (stepped, smooth)
+    - Linear gradient (stepped, smooth)
+    - Charts for final curves?
   - If multiple test results exist:
     - Graph change of lineazation, dMax, color, etc.
 - Investigate using RVG (outputting JPEG files) instead of SVG (if so, remove 'builder' dependency).
@@ -37,15 +46,13 @@
 - Display densities using log scale?
 - Test/rewrite 'add-printer':
   - Use CupsFFI instead of shelling out to 'lpadmin', etc.?
-- Figure out why ColorPort fails to read our reference target file.
 - Move gemspec out of Rakefile and into .gemspec
   - see: http://timelessrepo.com/use-the-gemspec
 
 ## Later
 
-- Document methods.
-- Refactor QuadCurves to use CurveSet instead of its own curve data.
-- Replace use of external Color class with our own.
-  - Use density throughout instead of luminance?
+- Create guide for process (on wiki).
+- Document classes & methods.
 - Generate our own QTR curves.
 - Use Jones diagrams for showing data <http://en.wikipedia.org/wiki/Jones_diagram>.
+- Figure out why ColorPort fails to read our reference target file.
