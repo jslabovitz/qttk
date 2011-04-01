@@ -32,7 +32,7 @@ module Quadtone
     def run
       @quad_file = Pathname.new(@quad_file)
       
-      quad = QuadCurves.from_file(@quad_file)
+      quad = CurveSet::QuadFile.from_quad_file(@quad_file)
       if @gradient
         image_file = Pathname.new('gradient.tif')
         image = Magick::Image.new(200, 200, Magick::GradientFill.new(0, 0, 0, 200, 'white', 'black'))

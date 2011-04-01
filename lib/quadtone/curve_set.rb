@@ -11,7 +11,13 @@ module Quadtone
       curve_set.read_samples!(samples)
       curve_set
     end
-  
+    
+    def self.from_quad_file(quad_file)
+      curve_set = new
+      curve_set.read_quad_file!(quad_file)
+      curve_set
+    end
+    
     def initialize(channels=nil)
       @channels = channels || self.class.all_channels
       @curves = []
@@ -65,7 +71,40 @@ module Quadtone
       @channels = curves_by_channel.map { |c| c.key }
       ;;warn "read #{samples.length} samples covering channels: #{@channels.join(' ')}"
     end
+    
+    ChannelAliases = {
+      'c' => :LC,
+      'm' => :LM,
+      'k' => :LK,
+    }
+    
+    # Read QTR quad (curve) file
   
+    def read_quad_file!(quad_file)
+  		lines = Pathname.new(quad_file).open.readlines.map { |line| line.chomp.force_encoding('ISO-8859-1') }
+      
+  	  # process header
+  	  line = lines.shift
+      line =~ /^##\s+QuadToneRIP\s+(.*)$/ or raise "Unexpected header value: #{line.inspect}"
+  		# "## QuadToneRIP K,C,M,Y,LC,LM"
+  		# "## QuadToneRIP KCMY"
+      channel_list = $1
+      @curves = ($1.split(channel_list =~ /,/ ? ',' : //)).map { |c| ChannelAliases[c] || c.to_sym }.map do |channel|
+        samples = (0..255).to_a.map do |input_density|
+          lines.shift while lines.first =~ /^#/
+          line = lines.shift
+          line =~ /^(\d+)$/ or raise "Unexpected value: #{line.inspect}"
+          output_density = $1.to_i
+          input = Color::GrayScale.from_fraction(input_density / 255.0)
+          output = Color::GrayScale.from_fraction(output_density / 65535.0)
+  		    Sample.new(input, output)
+  			end
+        # curve = nil if curve.empty? || curve.uniq == [0]
+  		  Curve.new(channel, samples)
+  		end
+      @channels = curves_by_channel.map { |c| c.key }
+    end
+    
     def curves_by_max_output_density
       @curves.sort_by { |c| c.max_output_density }.reverse
     end
@@ -228,6 +267,10 @@ module Quadtone
       def self.target_foreground_color
         Color::GrayScale.new(0)
       end
+    
+    end
+
+    class QuadFile < QTR
     
     end
   
