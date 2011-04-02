@@ -14,10 +14,14 @@ module Quadtone
     attr_accessor :gray_overlap
     attr_accessor :gray_gamma
     
-    PROFILE_FILENAME = 'profile.yaml'
+    ProfileName = 'profile'
+    CharacterizationName = 'characterization'
+    LinearizationName = 'linearization'
     
     def self.from_dir(base_dir=Pathname.new('.'))
-      YAML::load((base_dir + PROFILE_FILENAME).open.read)
+      profile = YAML::load((base_dir + "#{ProfileName}.yaml").open.read)
+      profile.read_curvesets!
+      profile
     end
     
     def initialize(params={})
@@ -28,36 +32,104 @@ module Quadtone
       @gray_overlap = 10
       @gray_gamma = 1
       params.each { |key, value| method("#{key}=").call(value) }
+      read_curvesets!
     end
     
+    def to_yaml_properties
+      super - [:@characterization_curveset, :@linearization_curveset]
+    end
+    
+    def read_curvesets!
+      read_characterization_curveset!
+      read_linearization_curveset!
+    end
+    
+    def read_characterization_curveset!
+      if characterization_measured_path.exist? && profile_path.exist? && characterization_measured_path.mtime > profile_path.mtime
+        @characterization_curveset = CurveSet::QTR.from_samples(Target.from_cgats_file(characterization_measured_path).samples)
+        #FIXME: Don't modify curves here -- do it with copies in #qtr_profile
+        @characterization_curveset.trim_curves!
+      else
+        warn "Ignoring characterization file #{characterization_measured_path} that is not newer than profile."
+      end
+    end
+    
+    def read_linearization_curveset!
+      if linearization_measured_path.exist? && characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime
+        @linearization_curveset = CurveSet::Grayscale.from_samples(Target.from_cgats_file(linearization_measured_path).samples)
+      else
+        warn "Ignoring linearization file #{linearization_measured_path} that is not newer than characterization file #{characterization_measured_path}."
+      end
+    end
+    
+    def characterization_curveset
+      read_characterization_curveset! unless @characterization_curveset
+      @characterization_curveset
+    end
+    
+    def linearization_curveset
+      read_linearization_curveset! unless @linearization_curveset
+      @linearization_curveset
+    end
+        
     def save!
-      (@base_dir + PROFILE_FILENAME).open('w') { |fh| YAML::dump(self, fh) }
+      profile_path.open('w') { |fh| YAML::dump(self, fh) }
+    end
+    
+    def profile_path
+      base_dir + "#{ProfileName}.yaml"
+    end
+    
+    def characterization_reference_path
+      @base_dir + "#{CharacterizationName}.reference.txt"
+    end
+    
+    def characterization_measured_path
+      @base_dir + "#{CharacterizationName}.measured.txt"
+    end
+    
+    def linearization_reference_path
+      @base_dir + "#{LinearizationName}.reference.txt"
+    end
+    
+    def linearization_measured_path
+      @base_dir + "#{LinearizationName}.measured.txt"
+    end
+    
+    def qtr_profile_path
+      @base_dir + (@name + '.txt')
+    end
+    
+    def build_targets
+      build_characterization_target
+      build_linearization_target
     end
     
     def build_characterization_target
-      reference_path = @base_dir + 'characterization.reference.txt'
-      reference_curveset = CurveSet::QTR.new(@inks)
-      reference_curveset.generate
+      curveset = CurveSet::QTR.new(@inks)
+      curveset.generate
       target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
       # target = Target.new
       oversample = 4
-      steps = target.max_samples / (reference_curveset.num_channels * oversample)
-      reference_curveset.fill_target(target, :steps => steps, :oversample => oversample)
-      target.write_image_file(reference_path.with_extname('.tif'))
-      target.write_cgats_file(reference_path)
+      steps = target.max_samples / (curveset.num_channels * oversample)
+      curveset.fill_target(target, :steps => steps, :oversample => oversample)
+      target.write_image_file(characterization_reference_path.with_extname('.tif'))
+      target.write_cgats_file(characterization_reference_path)
     end
     
     def build_linearization_target
-      reference_path = @base_dir + 'linearization.reference.txt'
-      reference_curveset = CurveSet::Grayscale.new
-      reference_curveset.generate
+      curveset = CurveSet::Grayscale.new
+      curveset.generate
       target = Target.new
-      reference_curveset.fill_target(target, :steps => 51, :oversample => 4)
-      target.write_image_file(reference_path.with_extname('.tif'))
-      target.write_cgats_file(reference_path)
+      curveset.fill_target(target, :steps => 51, :oversample => 4)
+      target.write_image_file(linearization_reference_path.with_extname('.tif'))
+      target.write_cgats_file(linearization_reference_path)
     end
     
     def qtr_profile(io)
+      
+      raise "No characterization is set" unless @characterization_curveset
+      
       io.puts "PRINTER=#{@printer}"
       io.puts "GRAPH_CURVE=NO"
       io.puts
@@ -89,16 +161,17 @@ module Quadtone
       
       if @linearization_curveset
         points = @linearization_curveset.curves.first.resample(21).points
-        io.puts
-        io.puts "LINEARIZE=\"#{points.map { |p| (1 - p.output) * 100 }.join(' ')}\""
+        io.puts "LINEARIZE=\"#{points.map { |p| 100 - (p.output * 100) }.join(' ')}\""
       end
+    end
+    
+    def write_qtr_profile
+      ;;warn "writing QTR profile to #{qtr_profile_path}"
+      qtr_profile_path.open('w') { |io| qtr_profile(io) }
     end
   
     def install
-      output_file = @base_dir + (@name + '.txt')
-      ;;warn "writing QTR profile to #{output_file}"
-      output_file.open('w') { |fh| qtr_profile(fh) }
-      system('/Library/Printers/QTR/bin/quadprofile', output_file)
+      system('/Library/Printers/QTR/bin/quadprofile', qtr_profile_path)
     end
   
   end

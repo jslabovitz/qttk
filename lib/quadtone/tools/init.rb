@@ -44,8 +44,7 @@ module Quadtone
         :printer => @printer,
         :inks => @inks)
       profile.save!
-      profile.build_characterization_target
-      profile.build_linearization_target
+      profile.build_targets
     end
   
   end

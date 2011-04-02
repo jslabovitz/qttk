@@ -3,20 +3,10 @@ include Quadtone
 
 module Quadtone
   
-  class ProfileTool < Tool
+  class TestTool < Tool
   
-    attr_accessor :no_install
-    
     def self.parse_args(args)
-      options = super
-      # process_options(args) do |option, args|
-      #   case option
-      #   when '--no-install'
-      #     options[:no_install] = true
-      #   else
-      #     raise ToolUsageError, "Unknown option: #{option}"
-      #   end
-      # end
+      super
       options
     end
   
