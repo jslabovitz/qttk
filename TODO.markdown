@@ -11,14 +11,6 @@
 
 ## Soon
 
-- Rework Curve class:
-  - Store values as simple floats expressing density.
-  - Add new class to replace Sample.
-- Rework CurveSet class:
-  - When reading samples, convert Lab to QTR.
-- Make Target & Sample classes more generic:
-  - Limit color knowledge to grayscale, RGB, and Lab.
-  - Rename Sample class to Target::Sample.
 - Let test targets cross multiple pages:
   - Calculate rows per page.
 - Add info banner to target:
@@ -51,6 +43,9 @@
 
 ## Later
 
+- Make Target & Sample classes more generic:
+  - Limit color knowledge to grayscale, RGB, and Lab.
+  - Rename Sample class to Target::Sample.
 - Create guide for process (on wiki).
 - Document classes & methods.
 - Generate our own QTR curves.
