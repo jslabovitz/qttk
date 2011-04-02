@@ -4,7 +4,7 @@ module Quadtone
   
     attr_accessor :channels
     attr_accessor :curves
-    attr_accessor :paper_sample
+    attr_accessor :paper_density
   
     def self.from_samples(samples)
       curve_set = new
@@ -21,52 +21,46 @@ module Quadtone
     def initialize(channels=nil)
       @channels = channels || self.class.all_channels
       @curves = []
-      @paper_sample = nil
+      @paper_density = nil
     end
   
     def generate
       @curves = []
       @channels.each do |channel|
-        samples = [
-          Sample.new(self.class.target_background_color, nil), 
-          Sample.new(self.class.color_for_channel_value(channel, 0), nil)
+        points = [
+          Curve::Point.new(0, nil), 
+          Curve::Point.new(1, nil)
         ]
-        @curves << Curve.new(channel, samples)
+        @curves << Curve.new(channel, points)
       end
     end
   
     def read_samples!(samples)
-      values = {}
+      points = {}
       samples.each do |sample|
-        input, output = sample.input, sample.output
-        raise "Sample is missing output data: #{sample.inspect}" if output.nil?
-        case input
-        when Color::QTR
-          curve_key = input.channel_key
-          input = input.to_grayscale
-        when Color::GrayScale
-          curve_key = :G
-        else
-          raise "Unknown input type: #{input.inspect}"
-        end
-        curve_key = :P if input.density == 0
-        output = output.to_grayscale
-        # output.g = 1 if output.g > 1
-        # output.g = 0 if output.g < 0
-        values[curve_key] ||= {}
-        values[curve_key][input] ||= []
-        values[curve_key][input] << output
+        raise "Sample is missing output data: #{sample.inspect}" if sample.output.nil?
+        channel, input = self.class.channel_density_for_color(sample.input)
+        output = sample.output.density
+        channel = :P if input == 0
+        #FIXME: Do we want to clip?
+        ;;output = 0 if output < 0
+        warn "Sample has input out of range: #{sample.inspect}" unless (0..1).include?(input)
+        warn "Sample has output out of range: #{sample.inspect}" unless (0..1).include?(output)
+        warn "Sample doesn't have channel: #{sample.inspect}" unless channel
+        points[channel] ||= {}
+        points[channel][input] ||= []
+        points[channel][input] << output
       end
-      # average multiple readings and make samples
-      values.each do |curve_key, inputs|
-        values[curve_key] = inputs.map { |input, outputs| Sample.new(input, Color::GrayScale.from_density(outputs.map { |o| o.density }.average)) }
+      # average multiple readings
+      points.each do |channel, inputs|
+        points[channel] = inputs.map { |input, outputs| Curve::Point.new(input, outputs.average) }
       end
       # find paper value
-      paper_values = values.delete(:P) or raise "No paper sample found!"
-      @paper_sample = paper_values.first
+      paper_shades = points.delete(:P) or raise "No paper sample found!"
+      @paper_density = paper_shades.first
       # create actual curves
-      @curves = values.map do |curve_key, samples|
-        Curve.new(curve_key, [@paper_sample] + samples)
+      @curves = points.map do |channel, points|
+        Curve.new(channel, [@paper_density] + points)
       end
       @channels = curves_by_channel.map { |c| c.key }
       ;;warn "read #{samples.length} samples covering channels: #{@channels.join(' ')}"
@@ -90,17 +84,15 @@ module Quadtone
   		# "## QuadToneRIP KCMY"
       channel_list = $1
       @curves = ($1.split(channel_list =~ /,/ ? ',' : //)).map { |c| ChannelAliases[c] || c.to_sym }.map do |channel|
-        samples = (0..255).to_a.map do |input_density|
+        points = (0..255).to_a.map do |input|
           lines.shift while lines.first =~ /^#/
           line = lines.shift
           line =~ /^(\d+)$/ or raise "Unexpected value: #{line.inspect}"
-          output_density = $1.to_i
-          input = Color::GrayScale.from_fraction(input_density / 255.0)
-          output = Color::GrayScale.from_fraction(output_density / 65535.0)
-  		    Sample.new(input, output)
+          output = $1.to_i
+  		    Curve::Point.new(input / 255.0, output / 65535.0)
   			end
         # curve = nil if curve.empty? || curve.uniq == [0]
-  		  Curve.new(channel, samples)
+  		  Curve.new(channel, points)
   		end
       @channels = curves_by_channel.map { |c| c.key }
     end
@@ -148,15 +140,15 @@ module Quadtone
         end
         curves_by_channel.each do |curve|
 
-          # draw individual samples
-          curve.samples.each do |sample|
-            xml.circle(:cx => size * sample.input.density, :cy => size * (1 - sample.output.density), :r => 2, :fill => 'red', :stroke => 'none')
+          # draw individual points
+          curve.points.each do |point|
+            xml.circle(:cx => size * point.input, :cy => size * (1 - point.output), :r => 2, :fill => 'red', :stroke => 'none')
           end
 
           # # draw interpolated curve
-          # points = (0..curve.max_input_density).step(1.0 / size).map do |input_density|
-          #   output_density = curve.output_for_input(input_density)
-          #   [size * input_density, size * (1 - output_density)]
+          # points = (0..curve.max_input_density).step(1.0 / size).map do |input|
+          #   output = curve.output_for_input(input)
+          #   [size * input, size * (1 - output)]
           # end
           # xml.polyline(
           #   :fill => 'none', 
@@ -166,9 +158,9 @@ module Quadtone
 
           # draw interpolated curve based on fewer points
           smoothed_curve = curve.resample(21)
-          points = (0..smoothed_curve.max_input_density).step(1.0 / size).map do |input_density|
-            output_density = smoothed_curve.output_for_input(input_density)
-            [size * input_density, size * (1 - output_density)]
+          points = (0..smoothed_curve.max_input_density).step(1.0 / size).map do |input|
+            output = smoothed_curve.output_for_input(input)
+            [size * input, size * (1 - output)]
           end
           xml.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
             xml.polyline(:points => points.map { |pt| pt.join(',') }.join(' '))
@@ -176,7 +168,7 @@ module Quadtone
             
           # draw marker for dMax
           limit = curve.ink_limit
-          point = [size * limit.input.density, size * (1 - limit.output.density)]
+          point = [size * limit.input, size * (1 - limit.output)]
           xml.g(:stroke => 'green', :'stroke-width' => 2) do
             xml.line(:x1 => point[0], :y1 => point[1] + 8, :x2 => point[0], :y2 => point[1] - 8)
           end
@@ -240,6 +232,10 @@ module Quadtone
         Color::QTR.new(channel, value)
       end
     
+      def self.channel_density_for_color(color)
+        [color.channel_key, color.density]
+      end
+    
       def self.target_background_color
         Color::QTR.new(:K, 1)
       end
@@ -258,6 +254,10 @@ module Quadtone
     
       def self.color_for_channel_value(channel, value)
         Color::GrayScale.from_fraction(value)
+      end
+      
+      def self.channel_density_for_color(color)
+        [:G, color.density]
       end
     
       def self.target_background_color

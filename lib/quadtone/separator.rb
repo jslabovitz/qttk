@@ -5,14 +5,14 @@ module Quadtone
     def initialize(curve_set)
   	  @luts = {}
   	  curve_set.curves_by_channel.each do |curve|
-    		color_map = Magick::Image.new(curve.num_samples, 1) do
+    		color_map = Magick::Image.new(curve.num_points, 1) do
           self.colorspace = Magick::GRAYColorspace
   		  end
         color_map.pixel_interpolation_method = Magick::IntegerInterpolatePixel
-  		  color_map.view(0, 0, curve.num_samples, 1) do |view|
-      		curve.samples.each do |sample|
-      		  col = (sample.input.g * (curve.num_samples - 1)).ceil
-            v = ((1 - sample.output.g) * 65535).to_i
+  		  color_map.view(0, 0, curve.num_points, 1) do |view|
+      		curve.points.each do |point|
+      		  col = 255 - (point.input * (curve.num_points - 1)).to_i
+            v = 65535 - (point.output * 65535).to_i
             view[0][col] = Magick::Pixel.new(v, v, v)
       		end
     		end

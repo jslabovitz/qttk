@@ -88,9 +88,9 @@ module Quadtone
       io.puts
       
       if @linearization_curveset
-        samples = @linearization_curveset.curves.first.resample(21).samples
+        points = @linearization_curveset.curves.first.resample(21).points
         io.puts
-        io.puts "LINEARIZE=\"#{samples.map { |s| (1 - s.output.density) * 100 }.join(' ')}\""
+        io.puts "LINEARIZE=\"#{points.map { |p| (1 - p.output) * 100 }.join(' ')}\""
       end
     end
   

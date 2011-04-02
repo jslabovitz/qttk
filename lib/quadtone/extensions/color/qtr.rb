@@ -30,7 +30,7 @@ module Color
       For background, use R=127 / G=255 / B=255
 =end
     
-    Channels = %w{LLK LK LM LC Y M C K}.map { |s| sym = s.to_sym; const_set(s, sym); sym }
+    Channels = %w{LLK LK LM LC Y M C K}.map { |ch| sym = ch.to_sym; const_set(ch, sym); sym }
   
     attr_accessor :channel_num
     attr_accessor :value
@@ -81,7 +81,7 @@ module Color
     end
     
     def inspect
-      "QTR [%s: %.2f]" % [@channel_num, @value]
+      "QTR [%s:%.2f]" % [channel_key || @channel_num, @value]
     end
     
     def hash
