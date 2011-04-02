@@ -46,7 +46,11 @@ module Quadtone
 
       separator = Separator.new(quad)
       separated_image = separator.separate(image)
-      separated_image = separated_image.montage if montage
+      if montage
+        separated_image = separated_image.montage do
+          self.frame = '2x2'
+        end
+      end
       ;;warn "writing #{separated_image_file}"
       separated_image.write(separated_image_file) { self.compression = Magick::ZipCompression }
     end
