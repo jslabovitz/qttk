@@ -3,10 +3,12 @@
 
 ## Now
 
-- Remove hardcoded/assumptions (eg, inks, paper sizes).
+- Scale gray values in profile by ink limits?
+- Remove 'trim!' method, and replace with something with no side effects.
 - Verify limiting/separation algorithms.
   - Generate sample data.
   - Write tests to verify operations.
+- Remove hardcoded/assumptions (eg, inks, paper sizes).
 
 
 ## Soon
@@ -17,9 +19,6 @@
   - Mode (characterization, linearization, etc.)
   - Date
   - Profile info (printer, paper, inks)
-- Ignore linearization measurement if file older than characterization.
-- Don't save characterization/linearization data in profile?
-  - Instead, always read from measurements file.
 - Add option to normalize curves in charts.
 - Add confirmation/testing step to profiling:
   - To test ink settling, sample fading, etc.
@@ -36,13 +35,14 @@
 - Investigate using pre-linearization of individual channels.
 - Create smoother curves (using bsplines?).
 - Display densities using log scale?
+
+
+## Later
+
 - Test/rewrite 'add-printer':
   - Use CupsFFI instead of shelling out to 'lpadmin', etc.?
 - Move gemspec out of Rakefile and into .gemspec
   - see: http://timelessrepo.com/use-the-gemspec
-
-## Later
-
 - Make Target & Sample classes more generic:
   - Limit color knowledge to grayscale, RGB, and Lab.
   - Rename Sample class to Target::Sample.
