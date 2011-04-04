@@ -58,8 +58,8 @@ module Quadtone
       @curves = values.map do |channel, points|
         Curve.new(channel, [@paper_density] + points)
       end
-      @channels = curves_by_channel.map { |c| c.key }
-      ;;warn "read #{samples.length} samples covering channels: #{@channels.join(' ')}"
+      @curves.sort_by! { |c| @channels.index(c.key) }
+      ;;warn "read #{samples.length} samples covering channels: #{@curves.map { |c| c.key }.join(' ')}"
     end
     
     ChannelAliases = {
@@ -90,38 +90,19 @@ module Quadtone
         # curve = nil if curve.empty? || curve.uniq == [0]
   		  Curve.new(channel, points)
   		end
-      @channels = curves_by_channel.map { |c| c.key }
     end
     
-    def curves_by_max_output_density
-      @curves.sort_by { |c| c.max_output_density }.reverse
-    end
-  
-    def curves_by_channel
-      @curves.sort_by { |c| @channels.index(c.key) }
-    end
-  
-    def trim_curves!
-      @curves.each { |curve| curve.trim! }
-    end
-  
     def num_channels
       @curves.length
     end
   
-    def limits
-      Hash[
-        curves_by_channel.map { |c| [c.key, c.max_input_density] }
-      ]
-    end
-  
     def separations
-      curves = curves_by_max_output_density
+      curves = @curves.sort_by { |c| c.ink_limit.output }.reverse
       darkest_curve = curves.shift
       separations = { darkest_curve.key => 1 }
       curves.each do |curve|
-        separations[curve.key] = darkest_curve.find_relative_density(curve.max_output_density) \
-          or raise "Can't find relative density for #{curve.max_output_density} in curve #{darkest_curve.key.inspect}"
+        separations[curve.key] = darkest_curve.find_relative_density(curve.ink_limit.output) \
+          or raise "Can't find relative density for #{curve.ink_limit.output} in curve #{darkest_curve.key.inspect}"
       end
       separations
     end
@@ -134,7 +115,7 @@ module Quadtone
           xml.rect(:x => 0, :y => 0, :width => size, :height => size, :fill => 'none', :'stroke-width' => 1)
           xml.line(:x1 => 0, :y1 => size, :x2 => size, :y2 => 0, :'stroke-width' => 0.5)
         end
-        curves_by_channel.each do |curve|
+        @curves.each do |curve|
 
           # draw individual points
           curve.points.each do |point|
@@ -146,21 +127,10 @@ module Quadtone
               xml.circle(:cx => size * point.input, :cy => size * (1 - point.output), :r => 2, :stroke => 'none', :fill => 'green')
             end
           end
-
-          # # draw interpolated curve
-          # points = (0..curve.max_input_density).step(1.0 / size).map do |input|
-          #   output = curve.output_for_input(input)
-          #   [size * input, size * (1 - output)]
-          # end
-          # xml.polyline(
-          #   :fill => 'none', 
-          #   :stroke => 'black', 
-          #   :'stroke-width' => 1,
-          #   :points => points.map { |pt| pt.join(',') }.join(' '))
-
+          
           # draw interpolated curve based on fewer points
           smoothed_curve = curve.resample(21)
-          points = (0..smoothed_curve.max_input_density).step(1.0 / size).map do |input|
+          points = (smoothed_curve.points.first.input..smoothed_curve.points.last.input).step(1.0 / size).map do |input|
             output = smoothed_curve.output_for_input(input)
             [size * input, size * (1 - output)]
           end
@@ -168,9 +138,8 @@ module Quadtone
             xml.polyline(:points => points.map { |pt| pt.join(',') }.join(' '))
           end
             
-          # draw marker for dMax
-          limit = curve.ink_limit
-          point = [size * limit.input, size * (1 - limit.output)]
+          # draw marker for ink limit
+          point = [size * curve.ink_limit.input, size * (1 - curve.ink_limit.output)]
           xml.g(:stroke => 'green', :'stroke-width' => 2) do
             xml.line(:x1 => point[0], :y1 => point[1] + 8, :x2 => point[0], :y2 => point[1] - 8)
           end
@@ -192,16 +161,13 @@ module Quadtone
     def fill_target(target, options={})
       steps = options[:steps] || 21
       oversample = options[:oversample] || 4
-      limits = options[:limits] || {}
       target.background_color = self.class.target_background_color
       target.foreground_color = self.class.target_foreground_color
       scale = density_scale(steps)
       samples = []
-      curves_by_channel.each do |curve|
+      @curves.each do |curve|
         # create scale for this channel
-        limit = limits[curve.key]
-        ;;warn "limiting #{curve.key} to #{limit}" if limit
-        scale_samples = scale.map { |d| self.class.color_for_channel_value(curve.key, 1 - (limit ? (d * limit) : d)) }
+        scale_samples = scale.map { |d| self.class.color_for_channel_value(curve.key, 1 - d) }
         # add multiple instances of each sample for each channel
         samples.concat(scale_samples * oversample)
       end

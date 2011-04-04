@@ -47,8 +47,6 @@ module Quadtone
     def read_characterization_curveset!
       if characterization_measured_path.exist? && profile_path.exist? && characterization_measured_path.mtime > profile_path.mtime
         @characterization_curveset = CurveSet::QTR.from_samples(Target.from_cgats_file(characterization_measured_path).samples)
-        #FIXME: Don't modify curves here -- do it with copies in #qtr_profile
-        @characterization_curveset.trim_curves!
       else
         warn "Ignoring characterization file #{characterization_measured_path} that is not newer than profile."
       end
@@ -138,8 +136,8 @@ module Quadtone
       io.puts
       
       io.puts "DEFAULT_INK_LIMIT=#{@default_ink_limit * 100}"
-      @characterization_curveset.curves_by_max_output_density.each do |curve|
-        io.puts "LIMIT_#{curve.key}=#{curve.max_input_density * 100}"
+      @characterization_curveset.curves.each do |curve|
+        io.puts "LIMIT_#{curve.key}=#{curve.ink_limit.input * 100}"
       end
       io.puts
       

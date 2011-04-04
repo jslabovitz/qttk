@@ -3,8 +3,8 @@
 
 ## Now
 
+- Find ink limits by looking along *resampled* curve, instead of original curve.
 - Scale gray values in profile by ink limits?
-- Remove 'trim!' method, and replace with something with no side effects.
 - Verify limiting/separation algorithms.
   - Generate sample data.
   - Write tests to verify operations.

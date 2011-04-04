@@ -4,7 +4,7 @@ module Quadtone
   
     def initialize(curve_set)
   	  @luts = {}
-  	  curve_set.curves_by_channel.each do |curve|
+  	  curve_set.curves.each do |curve|
     		color_map = Magick::Image.new(curve.num_points, 1) do
           self.colorspace = Magick::GRAYColorspace
   		  end

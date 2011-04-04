@@ -4,11 +4,13 @@ module Quadtone
   
     attr_accessor :key
     attr_accessor :points
-  
+    attr_accessor :ink_limit
+    
     def initialize(key, points)
       @key = key
       @points = points
       build_spline!
+      find_ink_limit!
     end
     
     def to_yaml_properties
@@ -40,29 +42,23 @@ module Quadtone
       @spline.eval(input)
     end
 
-    def ink_limit(resolution=20, min_density=0.1)
+    def find_ink_limit!(resolution=100, min_density=0.1)
+      @ink_limit = @points.last
       step_amount = 1.0 / resolution
-      (min_density..1).step(step_amount).each do |input|
+      (min_density..@points.last.input).step(step_amount).each do |input|
         output = output_for_input(input)
         next_output = output_for_input(input + step_amount)
         delta_e = next_output - output
-        if delta_e < 0.01
-          return Point.new(input, output)
+        if delta_e < 0.001
+          @ink_limit = Point.new(input, output)
+          break
         end
       end
     end
-    
-    def trim!(resolution=20, min_density=0.1)
-      limit = ink_limit(resolution, min_density) or raise "Can't find ink limit for #{key}"
-      point = @points.find { |p| p.input > limit.input }
-      i = @points.index(point)
-      ;;warn "#{key}: trimmed at first point > #{limit.input}: #{point.input} (point #{i})"
-      @points.slice!(i..-1)
-    end
-    
+        
     def resample(steps=21)
-      step_amount = max_input_density / (steps - 1)
-      new_points = (0..max_input_density).step(step_amount).map do |input|
+      step_amount = @points.last.input / (steps - 1)
+      new_points = (0..@points.last.input).step(step_amount).map do |input|
         Point.new(input, output_for_input(input))
       end
       self.class.new(@key, new_points)
@@ -74,14 +70,6 @@ module Quadtone
     
     def dump
       ;;warn "#{key}: (#{@points.length}) " + @points.map { |p| "%11s" % [p.input, p.output, output_for_input(p.input)].map { |n| (n*100).to_i }.join('/') }.join(' ')
-    end
-  
-    def max_input_density
-      @points.map { |p| p.input }.max
-    end
-  
-    def max_output_density
-      @points.map { |p| p.output }.max
     end
   
     def find_relative_density(output, resolution=100)
