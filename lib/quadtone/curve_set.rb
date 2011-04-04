@@ -119,8 +119,8 @@ module Quadtone
 
           # draw individual points
           curve.points.each do |point|
+            # calculate relative standard deviation
             error = point.stdev / point.output
-            xml.circle(:cx => size * point.input, :cy => size * (1 - point.output), :r => 2 + (error * 10), :stroke => 'none', :fill => 'green')
             if error > 0.05
               xml.circle(:cx => size * point.input, :cy => size * (1 - point.output), :r => 2 + (error * 10), :stroke => 'none', :fill => 'red')
             else
