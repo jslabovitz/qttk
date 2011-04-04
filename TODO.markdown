@@ -4,6 +4,9 @@
 ## Now
 
 - Find ink limits by looking along *resampled* curve, instead of original curve.
+- Detect & remove bad ink:
+  - Too much deviation in samples.
+  - Ink limit too low.
 - Scale gray values in profile by ink limits?
 - Verify limiting/separation algorithms.
   - Generate sample data.

@@ -128,10 +128,9 @@ module Quadtone
             end
           end
           
-          # draw interpolated curve based on fewer points
-          smoothed_curve = curve.resample(21)
-          points = (smoothed_curve.points.first.input..smoothed_curve.points.last.input).step(1.0 / size).map do |input|
-            output = smoothed_curve.output_for_input(input)
+          # draw interpolated curve
+          points = curve.input_scale(size).map do |input|
+            output = curve[input]
             [size * input, size * (1 - output)]
           end
           xml.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
@@ -163,7 +162,7 @@ module Quadtone
       oversample = options[:oversample] || 4
       target.background_color = self.class.target_background_color
       target.foreground_color = self.class.target_foreground_color
-      scale = density_scale(steps)
+      scale = input_scale(steps)
       samples = []
       @curves.each do |curve|
         # create scale for this channel
@@ -180,10 +179,6 @@ module Quadtone
       target
     end
   
-    def density_scale(steps=21, range=0..1)
-      range.step(1.0 / (steps - 1)).to_a
-    end
-    
     def dump
       @curves.each do |curve|
         curve.dump
