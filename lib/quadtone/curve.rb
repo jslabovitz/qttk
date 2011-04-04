@@ -91,7 +91,7 @@ module Quadtone
       relative
     end
     
-    class Point < Struct.new(:input, :output); end
+    class Point < Struct.new(:input, :output, :stdev); end
     
   end
   

@@ -36,30 +36,26 @@ module Quadtone
     end
   
     def read_samples!(samples)
-      points = {}
+      values = {}
       samples.each do |sample|
         raise "Sample is missing output data: #{sample.inspect}" if sample.output.nil?
         channel, input = self.class.channel_density_for_color(sample.input)
-        output = sample.output.density
         channel = :P if input == 0
-        #FIXME: Do we want to clip?
-        ;;output = 0 if output < 0
-        warn "Sample has input out of range: #{sample.inspect}" unless (0..1).include?(input)
-        warn "Sample has output out of range: #{sample.inspect}" unless (0..1).include?(output)
-        warn "Sample doesn't have channel: #{sample.inspect}" unless channel
-        points[channel] ||= {}
-        points[channel][input] ||= []
-        points[channel][input] << output
+        values[channel] ||= {}
+        values[channel][input] ||= []
+        values[channel][input] << [sample.output.density, 0].max
       end
       # average multiple readings
-      points.each do |channel, inputs|
-        points[channel] = inputs.map { |input, outputs| Curve::Point.new(input, outputs.average) }
+      values.each do |channel, inputs|
+        values[channel] = inputs.sort.map do |input, outputs|
+          Curve::Point.new(input, *outputs.mean_stdev)
+        end
       end
       # find paper value
-      paper_shades = points.delete(:P) or raise "No paper sample found!"
+      paper_shades = values.delete(:P) or raise "No paper sample found!"
       @paper_density = paper_shades.first
       # create actual curves
-      @curves = points.map do |channel, points|
+      @curves = values.map do |channel, points|
         Curve.new(channel, [@paper_density] + points)
       end
       @channels = curves_by_channel.map { |c| c.key }
@@ -142,7 +138,13 @@ module Quadtone
 
           # draw individual points
           curve.points.each do |point|
-            xml.circle(:cx => size * point.input, :cy => size * (1 - point.output), :r => 2, :fill => 'red', :stroke => 'none')
+            error = point.stdev / point.output
+            xml.circle(:cx => size * point.input, :cy => size * (1 - point.output), :r => 2 + (error * 10), :stroke => 'none', :fill => 'green')
+            if error > 0.05
+              xml.circle(:cx => size * point.input, :cy => size * (1 - point.output), :r => 2 + (error * 10), :stroke => 'none', :fill => 'red')
+            else
+              xml.circle(:cx => size * point.input, :cy => size * (1 - point.output), :r => 2, :stroke => 'none', :fill => 'green')
+            end
           end
 
           # # draw interpolated curve
