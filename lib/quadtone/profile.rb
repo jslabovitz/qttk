@@ -45,18 +45,22 @@ module Quadtone
     end
     
     def read_characterization_curveset!
-      if characterization_measured_path.exist? && profile_path.exist? && characterization_measured_path.mtime > profile_path.mtime
-        @characterization_curveset = CurveSet::QTR.from_samples(Target.from_cgats_file(characterization_measured_path).samples)
-      else
-        warn "Ignoring characterization file #{characterization_measured_path} that is not newer than profile."
+      if characterization_measured_path.exist?
+          if profile_path.exist? && characterization_measured_path.mtime > profile_path.mtime
+          @characterization_curveset = CurveSet::QTR.from_samples(Target.from_cgats_file(characterization_measured_path).samples)
+        else
+          warn "Ignoring characterization file #{characterization_measured_path} that is not newer than profile."
+        end
       end
     end
     
     def read_linearization_curveset!
-      if linearization_measured_path.exist? && characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime
-        @linearization_curveset = CurveSet::Grayscale.from_samples(Target.from_cgats_file(linearization_measured_path).samples)
-      else
-        warn "Ignoring linearization file #{linearization_measured_path} that is not newer than characterization file #{characterization_measured_path}."
+      if linearization_measured_path.exist?
+        if characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime
+          @linearization_curveset = CurveSet::Grayscale.from_samples(Target.from_cgats_file(linearization_measured_path).samples)
+        else
+          warn "Ignoring linearization file #{linearization_measured_path} that is not newer than characterization file #{characterization_measured_path}."
+        end
       end
     end
     
