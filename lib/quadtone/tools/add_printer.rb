@@ -31,7 +31,7 @@ module Quadtone
 
       uri = loc = nil
 
-      (cups_serverbin_dir + 'backend' + 'usb').popen.readlines.each do |line|
+      File.popen(cups_serverbin_dir + 'backend' + 'usb').readlines.each do |line|
         #FIXME: Too fragile -- use 'lpinfo' to find all printers
         if line =~ /(usb:.*EPSON.*#{Regexp.escape(model.sub(/^Quad/, ''))})/
           uri = $1
@@ -66,7 +66,7 @@ module Quadtone
         '-v', uri)
       raise "Failed to create printer" unless $? == 0
 
-      curves_dir.mkpath(0777)
+      curves_dir.mkpath
     end
   
   end
