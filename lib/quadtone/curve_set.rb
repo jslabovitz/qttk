@@ -162,11 +162,10 @@ module Quadtone
       oversample = options[:oversample] || 4
       target.background_color = self.class.target_background_color
       target.foreground_color = self.class.target_foreground_color
-      scale = input_scale(steps)
       samples = []
       @curves.each do |curve|
         # create scale for this channel
-        scale_samples = scale.map { |d| self.class.color_for_channel_value(curve.key, 1 - d) }
+        scale_samples = curve.input_scale(steps).map { |d| self.class.color_for_channel_value(curve.key, 1 - d) }
         # add multiple instances of each sample for each channel
         samples.concat(scale_samples * oversample)
       end
