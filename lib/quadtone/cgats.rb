@@ -43,7 +43,8 @@ module Quadtone
         when :data
           case line
           when 'END_DATA'
-            state = :main
+            # Emission data (BEGIN_DATA_EMISSION) may come after here, but we don't handle it.
+            break
           else
             values = line.split(/\s+/).map do |v|
               case v
