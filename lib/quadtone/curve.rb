@@ -1,7 +1,7 @@
 module Quadtone
   
   class Curve
-  
+    
     attr_accessor :key
     attr_accessor :points
     attr_accessor :resolution
@@ -11,6 +11,7 @@ module Quadtone
       @key = key
       @points = points.sort_by { |p| p.input }
       @resolution = 11
+      @min_delta_e = 0.005
       initial_spline = build_spline(@points)
       resampled_points = input_scale(@resolution).map { |input| Point.new(input, initial_spline.eval(input)) }
       @spline = build_spline(resampled_points)
@@ -57,7 +58,7 @@ module Quadtone
         output = self[input]
         next_output = self[next_input]
         delta_e = next_output - output
-        if delta_e < 0.001
+        if delta_e < @min_delta_e
           @ink_limit = Point.new(input, output)
           break
         end
