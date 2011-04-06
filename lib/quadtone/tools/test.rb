@@ -4,12 +4,7 @@ include Quadtone
 module Quadtone
   
   class TestTool < Tool
-  
-    def self.parse_args(args)
-      super
-      options
-    end
-  
+    
     def run
       ;;warn "Not yet implemented"
       # - test linearization

@@ -11,4 +11,5 @@ Quadtone::Tool.process_args(ARGV,
   'init'          => Quadtone::InitTool,
   'profile'       => Quadtone::ProfileTool,
   'separate'      => Quadtone::SeparateTool,
+  'test'          => Quadtone::TestTool,
 )

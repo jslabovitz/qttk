@@ -7,52 +7,37 @@ module Quadtone
     attr_accessor :profile_dir
     attr_accessor :no_install
     
-    def self.process_args(args, subcommands)
+    def self.process_args(args, tools)
       begin
-        subcmd = args.shift or raise ToolUsageError, "No subcommand specified"
-        subcmd_class = subcommands[subcmd] or raise ToolUsageError, "Unknown subcommand specified"
-        options = subcmd_class.parse_args(args)
-        raise ToolUsageError, "Extra arguments specified but unused: #{args.join(', ')}" if args.length > 0
-        subcmd_class.new(options).run
+        name = args.shift or raise ToolUsageError, "No subcommand specified"
+        klass = tools[name] or raise ToolUsageError, "Unknown subcommand specified"
+        tool = klass.new
+        while args.first && args.first[0] == '-'
+          option = args.shift
+          tool.parse_global_option(option, args) or tool.parse_option(option, args) or raise ToolUsageError, "Unknown option: #{option}"
+        end
+        tool.run(*args)
       rescue ToolUsageError => e
         warn e
         exit 1
       end
     end
     
-    def self.process_options(args, &block)
-      while args.first && args.first[0] == '-'
-        yield(args.shift, args)
+    def parse_global_option(option, args)
+      case option
+      when '--profile-dir', '-p'
+        dir = args.shift or raise "Must specify profile directory"
+        @profile_dir = Pathname.new(dir)
+      when '--no-install'
+        @no_install = true
       end
     end
     
-    def self.parse_args(args)
-      options = {}
-      process_options(args) do |option, args|
-        case option
-        when '--profile-dir', '-p'
-          options[:profile_dir] = Pathname.new(args.shift) or raise "Must specify profile directory"
-        when '--no-install'
-          options[:no_install] = true
-        else
-          raise ToolUsageError, "Unknown option: #{option}"
-        end
-      end
-      options[:profile_dir] ||= Pathname.new('.')
-      options
+    def initialize
+      @profile_dir = Pathname.new('.')
     end
     
-    def initialize(options={})
-      options.each do |key, value|
-        begin
-          method("#{key}=").call(value)
-        rescue NameError => e
-          raise "Unknown option for #{self.class}: #{key.inspect}"
-        end
-      end
-    end
-    
-    def run
+    def run(args)
       raise UnimplementedMethod, "Tool #{self.class} does not implement \#run"
     end
   

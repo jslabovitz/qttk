@@ -5,10 +5,6 @@ module Quadtone
   
   class ChartTool < Tool
       
-    def self.parse_args(args)
-      super
-    end
-  
     def run
       profile = Profile.from_dir(@profile_dir)
       if profile.characterization_curveset
