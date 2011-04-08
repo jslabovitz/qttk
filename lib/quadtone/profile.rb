@@ -110,8 +110,8 @@ module Quadtone
     def build_characterization_target
       curveset = CurveSet::QTR.new(@inks)
       curveset.generate
-      target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
-      # target = Target.new
+      # target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
+      target = Target.new
       oversample = 4
       steps = target.max_samples / (curveset.num_channels * oversample)
       curveset.fill_target(target, :steps => steps, :oversample => oversample)

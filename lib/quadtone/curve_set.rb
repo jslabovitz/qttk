@@ -43,12 +43,24 @@ module Quadtone
         channel = :P if input == 0
         values[channel] ||= {}
         values[channel][input] ||= []
-        values[channel][input] << [sample.output.density, 0].max
+        values[channel][input] << sample.output
       end
-      # average multiple readings
+      # average multiple readings & determine ink limits
+      limits = {}
       values.each do |channel, inputs|
+        min_chroma = nil
         values[channel] = inputs.sort.map do |input, outputs|
-          Curve::Point.new(input, *outputs.mean_stdev)
+          lab = Color::Lab.new(
+            outputs.map(&:l).mean,
+            outputs.map(&:a).mean,
+            outputs.map(&:b).mean)
+          chroma = lab.to_lch.c
+          if min_chroma.nil? || chroma < min_chroma
+            limits[channel] = Curve::Point.new(input, lab.density)
+            min_chroma = chroma
+          end
+          density_mean, density_stdev = outputs.map { |o| o.density }.mean_stdev
+          Curve::Point.new(input, density_mean, density_stdev)
         end
       end
       # find paper value
@@ -56,7 +68,7 @@ module Quadtone
       @paper_density = paper_shades.first
       # create actual curves
       @curves = values.map do |channel, points|
-        Curve.new(channel, [@paper_density] + points)
+        Curve.new(channel, [@paper_density] + points, limits[channel])
       end
       @curves.sort_by! { |c| @channels.index(c.key) }
       ;;warn "read #{samples.length} samples covering channels: #{@curves.map { |c| c.key }.join(' ')}"
@@ -120,8 +132,7 @@ module Quadtone
           # draw individual points
           curve.points.each do |point|
             # calculate relative standard deviation
-            error = point.stdev / point.output
-            if error > 0.05
+            if point.stdev && (error = point.stdev / point.output) > 0.05
               xml.circle(:cx => size * point.input, :cy => size * (1 - point.output), :r => 2 + (error * 10), :stroke => 'none', :fill => 'red')
             else
               xml.circle(:cx => size * point.input, :cy => size * (1 - point.output), :r => 2, :stroke => 'none', :fill => 'green')

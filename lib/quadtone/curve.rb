@@ -7,15 +7,14 @@ module Quadtone
     attr_accessor :resolution
     attr_accessor :ink_limit
     
-    def initialize(key, points)
+    def initialize(key, points, ink_limit=nil)
       @key = key
       @points = points.sort_by { |p| p.input }
+      @ink_limit = ink_limit
       @resolution = 11
-      @min_delta_e = 0.005
       initial_spline = build_spline(@points)
       resampled_points = input_scale(@resolution).map { |input| Point.new(input, initial_spline.eval(input)) }
       @spline = build_spline(resampled_points)
-      find_ink_limit!
     end
     
     def to_yaml_properties
@@ -50,21 +49,6 @@ module Quadtone
       range.step(1.0 / (steps - 1)).to_a
     end
     
-    def find_ink_limit!(resolution=100)
-      @ink_limit = @points.last
-      scale = input_scale(resolution)
-      scale.each_with_index do |input, i|
-        next_input = scale[i + 1] or next
-        output = self[input]
-        next_output = self[next_input]
-        delta_e = next_output - output
-        if delta_e < @min_delta_e
-          @ink_limit = Point.new(input, output)
-          break
-        end
-      end
-    end
-        
     def num_points
       @points.length
     end
