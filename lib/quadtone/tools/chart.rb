@@ -5,17 +5,20 @@ module Quadtone
   
   class ChartTool < Tool
       
-    def run
-      profile = Profile.from_dir(@profile_dir)
-      if profile.characterization_curveset
-        profile.characterization_curveset.write_svg_file(profile.characterization_measured_path.with_extname('.svg'))
-      else
-        warn "No characterization curveset to chart."
-      end
-      if profile.linearization_curveset
-        profile.linearization_curveset.write_svg_file(profile.linearization_measured_path.with_extname('.svg'))
-      else
-        warn "No linearization curveset to chart."
+    def run(*measurement_files)
+      measurement_files.map { |p| Pathname.new(p) }.each do |path|
+        target = Target.from_cgats_file(path)
+        mode = target.color_mode
+        if mode == Color::QTR
+          curveset = CurveSet::QTR.from_samples(target.samples)
+        elsif mode == Color::GrayScale
+          curveset = CurveSet::Grayscale.from_samples(target.samples)
+        else
+          raise "Don't know how to chart target in color mode #{mode.inspect}"
+        end
+        svg_path = path.with_extname('.svg')
+        ;;warn "writing SVG file to #{svg_path}"
+        curveset.write_svg_file(svg_path)
       end
     end
   

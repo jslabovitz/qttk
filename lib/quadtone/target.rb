@@ -72,6 +72,10 @@ module Quadtone
     def samples
       @table.flatten.compact
     end
+    
+    def color_mode
+      samples.first.input.class
+    end
   
     def read_cgats_file!(cgats_file)
       cgats = CGATS.new_from_file(cgats_file)
