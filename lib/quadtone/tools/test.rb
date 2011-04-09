@@ -53,7 +53,7 @@ module Quadtone
         ilist << image2
         image_list << ilist.append(true)
       end
-      final_image = image_list.append(false)
+      final_image = image_list.append(true)
       ;;warn "writing #{image_file}"
       final_image.write(image_file) { self.compression = Magick::ZipCompression }
       
