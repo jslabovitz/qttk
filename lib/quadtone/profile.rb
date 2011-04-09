@@ -176,6 +176,25 @@ module Quadtone
     def install
       system('/Library/Printers/QTR/bin/quadprofile', qtr_profile_path)
     end
+    
+    def print_image(image_path, options={})
+      printer = CupsPrinter.new(@printer)
+      if options['ColorModel'] != 'QTCAL'
+        options['ripCurve1'] = @name
+      end
+      printer.print_file(image_path, options)
+    end
+    
+    def dump_printer_options
+      ppd = CupsPPD.new(@printer)
+      ppd.options.each do |option|
+        puts "%s: %s [%s]" % [
+          option[:keyword],
+          option[:default_choice],
+          (option[:choices].map { |o| o[:choice] } - [option[:default_choice]]).join(' ')
+        ]
+      end
+    end
   
   end
   

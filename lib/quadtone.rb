@@ -8,6 +8,7 @@ require 'gsl'
 require 'pathname3'
 require 'rmagick'
 require 'builder'   # for SVG generation
+require 'cupsffi'
 
 # ours
 require 'quadtone/cgats'
@@ -28,6 +29,7 @@ require 'quadtone/tools/add_printer'
 require 'quadtone/tools/chart'
 require 'quadtone/tools/dump'
 require 'quadtone/tools/init'
+require 'quadtone/tools/print'
 require 'quadtone/tools/profile'
 require 'quadtone/tools/separate'
 require 'quadtone/tools/test'
