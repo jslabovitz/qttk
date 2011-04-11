@@ -29,7 +29,7 @@ module Quadtone
       options = {}
       options['Resolution'] = @resolution if @resolution
       options['ColorModel'] = 'QTCAL' if @calibrate
-      options['Media'] = @media if @calibrate
+      options['Media'] = @media if @media
       image_files.each { |p| Pathname.new(p) }.each do |image_path|
         profile.print_image(image_path, options)
       end

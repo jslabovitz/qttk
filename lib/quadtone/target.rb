@@ -7,7 +7,6 @@
     patch size (scan direction) >= 10mm (28pt)
     patch size (perpendicular)  8mm (23pt)
     gap size in scan direction  0.5mm - 1.0mm (2pt)
-    
     optimum patches per strip   21
     
 =end
@@ -21,12 +20,16 @@ module Quadtone
       Color::GrayScale  => %w{GRAY},
       Color::Lab        => %w{LAB_L LAB_A LAB_B}
     }
-
-    attr_accessor :patch_size
-    attr_accessor :gap_size         # must be even
+    
+    LabelFontSize     = 10
+    ColumnLabelWidth  = 20
+    RowLabelHeight    = 20
+    PatchSize         = 32
+    GapSize           = 4     # must be even
+    MaxColumns        = 21
+    
     attr_accessor :background_color
     attr_accessor :foreground_color
-    attr_accessor :max_columns
     attr_accessor :max_rows
   
     def self.from_cgats_file(cgats_file)
@@ -36,17 +39,18 @@ module Quadtone
     end
   
     def initialize(height_inches=8)
-      @patch_size = 28
-      @gap_size = 4
       @background_color = Color::GrayScale.new(100)
       @foreground_color = Color::GrayScale.new(0)
-      @max_columns = 21
-      @max_rows = ((height_inches * 72) / @patch_size).round - 1
+      @max_rows = ((height_inches * 72) / PatchSize).round - 1
       @table = [[]]
     end
-  
+    
+    def max_columns
+      MaxColumns
+    end
+    
     def max_samples
-      @max_columns * @max_rows
+      MaxColumns * @max_rows
     end
   
     def <<(samples)
@@ -54,7 +58,7 @@ module Quadtone
         raise "Too many samples (would exceed #{max_samples})" if samples.length + 1 == max_samples
         sample = Sample.new(sample, nil) unless sample.kind_of?(Sample)
         cur_row = @table[-1]
-        if cur_row.length == @max_columns
+        if cur_row.length == MaxColumns
           @table << (cur_row = [])
         end
         cur_row << sample
@@ -113,48 +117,70 @@ module Quadtone
       end
       cgats_file.open('w') { |fh| cgats.write(fh) }
     end
-  
+    
     def write_image_file(image_file)
-      label_size = 6
-      label_font_size = 10
-      image = Magick::Image.new(
-        label_size + ((num_columns + 1) * (@gap_size + @patch_size)) + @gap_size, num_rows * @patch_size, 
-        # work around inability to specify background color within Image.new's init block
-        Magick::HatchFill.new(@background_color.html, @background_color.html)
-      ) do
+      image.write(image_file) do
         self.depth = 8
         self.compression = Magick::ZipCompression
-        # self.background_color = @background_color.html
       end
-      # draw patches
-      @table.each_with_index do |row, row_index|
-        # draw row label
-        text = Magick::Draw.new
-        text.fill(@foreground_color.html)
-        text.text_antialias(false)
-        text.font_size(label_font_size)
-        text.text(0, ((row_index + 1) * @patch_size) - label_font_size, (row_index + 1).to_s)
-        text.draw(image)
-        # draw columns
-        row.each_with_index do |sample, column_index|
-          x, y = label_size + (column_index + 1) * (@gap_size + @patch_size), row_index * @patch_size
-          patch = Magick::Draw.new
-          patch.fill(sample.input.html)
-          patch.stroke_antialias(false)
-          patch.rectangle(x + @gap_size, y, x + @gap_size + @patch_size - 0.5, y + @patch_size)
-          patch.draw(image)
+    end
+    
+    def image(size={:width=>(11*72)-(9*2),:height=>(8.5*72)-(9*2)})
+      Magick::RVG.dpi = 72
+      rvg = Magick::RVG.new(size[:width], size[:height]) do |canvas|
+        canvas.background_fill = @background_color.html
+        canvas.g.translate(ColumnLabelWidth, RowLabelHeight) do |patches|
+          draw_patches(patches)
+          draw_gaps(patches)
+        end
+        canvas.g.translate(0, RowLabelHeight) { |g| draw_row_labels(g) }
+        canvas.g.translate(ColumnLabelWidth, 0) { |g| draw_column_labels(g) }
+        # draw_header(g)
+      end
+      rvg.draw
+    end
+    
+    private
+    
+    def draw_header(image)
+      draw = Magick::Draw.new
+      # draw.translate(x, y)
+      draw.draw(image)
+    end
+    
+    def draw_row_labels(g)
+      num_rows.times do |row|
+        label = (row + 1).to_s
+        x, y = 0, (row * PatchSize) + (PatchSize / 2)
+        g.text(x, y, label).styles(:font_size => LabelFontSize, :fill => @foreground_color.html)
+      end
+    end
+
+    def draw_column_labels(g)
+      num_columns.times do |col|
+        label = CGATS::ColumnLabels[col]
+        x, y = ((col + 1) * PatchSize) + (PatchSize / 2), RowLabelHeight - LabelFontSize
+        g.text(x, y, label).styles(:text_anchor => 'middle', :font_size => LabelFontSize, :fill => @foreground_color.html)
+      end
+    end
+    
+    def draw_patches(g)
+      @table.each_with_index do |columns, row|
+        columns.each_with_index do |sample, col|
+          w, h = PatchSize, PatchSize
+          x, y = (col + 1) * PatchSize, row * PatchSize
+          g.rect(w, h, x, y).styles(:fill => sample.input.html)
   	    end
       end
-      # draw "black" gaps
-      (num_columns + 1).times do |i|
-        x = label_size + ((i + 1) * (@gap_size + @patch_size))
-        black_gap = Magick::Draw.new
-        black_gap.fill(@foreground_color.html)
-        black_gap.stroke_antialias(false)
-        black_gap.rectangle(x + (@gap_size / 2), 0, x + @gap_size - 0.5, num_rows * @patch_size)
-        black_gap.draw(image)
+    end
+    
+    def draw_gaps(g)
+      (num_columns + 1).times do |col|
+        w, h = (GapSize / 2) - 1, (num_rows * PatchSize)
+        x, y = (col + 1) * PatchSize, 0
+        g.rect(w, h, x, y).styles(:fill => @background_color.html)
+        g.rect(w, h, x + (GapSize / 2), y).styles(:fill => @foreground_color.html)
       end
-      image.write(image_file)
     end
     
   end

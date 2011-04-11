@@ -3,6 +3,10 @@
 
 ## Now
 
+- Submit 'cupsffi' changes to maintainer.
+- Remove hard-coded 'require' of 'cupsffi'.
+- Get media page/margins from PPD file for printing target.
+- Include test reference image in gem distribution, rather than using something in ~/Downloads.
 - Detect & remove bad ink:
   - Too much deviation in samples.
   - Ink limit too low.
@@ -11,12 +15,13 @@
   - Generate sample data.
   - Write tests to verify operations.
 - Remove hardcoded/assumptions (eg, inks, paper sizes).
-
+- Build printer resolution, etc., into profile.
 
 ## Soon
 
 - Let test targets cross multiple pages:
   - Calculate rows per page.
+  - Raise error on too many samples only if can't fit on max number of pages.
 - Add info banner to target:
   - Mode (characterization, linearization, etc.)
   - Date

@@ -53,6 +53,11 @@ module Quadtone
         ilist << image2
         image_list << ilist.append(true)
       end
+      begin
+        bounds = Magick::Rectangle.new(350, 350, 0, 0)
+        ilist = Magick::ImageList.new(Pathname.new(ENV['HOME']) + 'Downloads/4843128953_83c1770907_o.jpg')
+        image_list << ilist.first.resize_to_fill(350, 350)
+      end
       final_image = image_list.append(true)
       ;;warn "writing #{image_file}"
       final_image.write(image_file) { self.compression = Magick::ZipCompression }

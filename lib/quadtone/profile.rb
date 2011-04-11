@@ -187,8 +187,20 @@ module Quadtone
     
     def dump_printer_options
       ppd = CupsPPD.new(@printer)
-      ppd.options.each do |option|
-        puts "%s: %s [%s]" % [
+      default_page_size = ppd.attribute('DefaultPageSize').first[:value]
+      puts "Page size (#{default_page_size}):"
+      ;;pp ppd.page_size(default_page_size)
+      puts "Attributes:"
+      ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
+        puts "\t" + "%s%s: %s" % [
+          attribute[:name],
+          attribute[:spec].empty? ? '' : " (#{attribute[:spec]})",
+          attribute[:value]
+        ]
+      end
+      puts "Options:"
+      ppd.options.sort_by { |o| o[:keyword] }.each do |option|
+        puts "\t" + "%s: %s [%s]" % [
           option[:keyword],
           option[:default_choice],
           (option[:choices].map { |o| o[:choice] } - [option[:default_choice]]).join(' ')
