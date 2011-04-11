@@ -13,6 +13,7 @@ MeasureTool is a part of the ProfileMaker software package, which may be downloa
   - click *Start* button
   - calibrate spectrophotometer as instructed
   - click *Mode* popup and select *Strip without gaps*
+  - select *Low chart resolution*, especially if print resolution is low (eg, 720 or even 1440)
   - measure strips in turn
   - click *Close* button
   - click *Export Lab...* button
