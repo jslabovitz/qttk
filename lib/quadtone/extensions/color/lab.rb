@@ -6,7 +6,7 @@ module Color
     attr_accessor :a
     attr_accessor :b
     
-    def initialize(l, a, b)
+    def initialize(l, a=0, b=0)
       @l, @a, @b = l.to_f, a.to_f, b.to_f
     end
     
@@ -20,6 +20,16 @@ module Color
     
     def to_grayscale
       GrayScale.new(@l)
+    end
+    
+    def chroma
+      # http://www.brucelindbloom.com/Eqn_Lab_to_LCH.html
+      Math::sqrt((@a * @a) + (@b * @b))
+    end
+    
+    def hue
+      # http://www.brucelindbloom.com/Eqn_Lab_to_LCH.html
+      (Math::atan2(@b, @a) * (180 / Math::PI)) % 360
     end
     
     def to_lch

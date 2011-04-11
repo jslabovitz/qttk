@@ -25,13 +25,12 @@ module Quadtone
     end
   
     def generate
-      @curves = []
-      @channels.each do |channel|
+      @curves = @channels.map do |channel|
         points = [
           Curve::Point.new(0, nil), 
           Curve::Point.new(1, nil)
         ]
-        @curves << Curve.new(channel, points)
+        Curve.new(channel, points)
       end
     end
   
@@ -45,22 +44,15 @@ module Quadtone
         values[channel][input] ||= []
         values[channel][input] << sample.output
       end
-      # average multiple readings & determine ink limits
-      limits = {}
+      # average multiple readings
       values.each do |channel, inputs|
-        min_chroma = nil
         values[channel] = inputs.sort.map do |input, outputs|
-          lab = Color::Lab.new(
+          output = Color::Lab.new(
             outputs.map(&:l).mean,
             outputs.map(&:a).mean,
             outputs.map(&:b).mean)
-          chroma = lab.to_lch.c
-          if min_chroma.nil? || chroma < min_chroma
-            limits[channel] = Curve::Point.new(input, lab.density)
-            min_chroma = chroma
-          end
-          density_mean, density_stdev = outputs.map { |o| o.density }.mean_stdev
-          Curve::Point.new(input, density_mean, density_stdev)
+          output_density, output_density_stdev = outputs.map { |o| o.density }.mean_stdev
+          Curve::Point.new(input, output_density, output_density_stdev)
         end
       end
       # find paper value
@@ -68,7 +60,7 @@ module Quadtone
       @paper_density = paper_shades.first
       # create actual curves
       @curves = values.map do |channel, points|
-        Curve.new(channel, [@paper_density] + points, limits[channel])
+        Curve.new(channel, [@paper_density] + points)
       end
       @curves.sort_by! { |c| @channels.index(c.key) }
       ;;warn "read #{samples.length} samples covering channels: #{@curves.map { |c| c.key }.join(' ')}"
@@ -147,11 +139,21 @@ module Quadtone
           xml.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
             xml.polyline(:points => points.map { |pt| pt.join(',') }.join(' '))
           end
-            
-          # draw marker for ink limit
-          point = [size * curve.ink_limit.input, size * (1 - curve.ink_limit.output)]
-          xml.g(:stroke => 'green', :'stroke-width' => 2) do
-            xml.line(:x1 => point[0], :y1 => point[1] + 8, :x2 => point[0], :y2 => point[1] - 8)
+          
+          # draw marker for ink limit (chroma)
+          if (limit = curve.ink_limits[:chroma])
+            x, y = size * limit.input, size * (1 - limit.output)
+            xml.g(:stroke => 'magenta', :'stroke-width' => 2) do
+              xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+            end
+          end
+          
+          # draw marker for ink limit (density)
+          if (limit = curve.ink_limits[:density])
+            x, y = size * limit.input, size * (1 - limit.output)
+            xml.g(:stroke => 'black', :'stroke-width' => 2) do
+              xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+            end
           end
         end
       end
