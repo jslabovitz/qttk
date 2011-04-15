@@ -12,20 +12,23 @@ module Color
       [:value]
     end
     
-    def self.average(colors)
+    def self.average(colors, method=:mad)
       errors = []
-      if true
+      case method
+      when :mad
         avg_components = components.map do |comp|
           median, mad = colors.map(&comp).median, colors.map(&comp).mad
           errors << mad / median
           median
         end
-      else
+      when :stdev
         avg_components = components.map do |comp|
           mean, stdev = colors.map(&comp).mean_stdev
           errors << stdev / mean
           mean
         end
+      else
+        raise "Unknown averaging method: #{method.inspect}"
       end
       [new(*avg_components), errors.max]
     end
