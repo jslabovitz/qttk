@@ -19,8 +19,6 @@
 - Print maximum number of patches on target.
   - Experiment with whether more steps or over-sampling is better.
 - Determine optimum delta-E for ink detection (& make configurable).
-- Move color classes out of extensions.
-  - Rename 'grayscale' to just 'gray'.
 
 ## Soon
 
