@@ -2,7 +2,7 @@
 
 module Color
   
-  class QTR
+  class QTR < Gray
   
 =begin
 
@@ -33,55 +33,47 @@ module Color
     Channels = %w{LLK LK LM LC Y M C K}.map { |ch| sym = ch.to_sym; const_set(ch, sym); sym }
   
     attr_accessor :channel_num
-    attr_accessor :value
   
     def self.from_rgb(r, g, b)
-      new(r, g, b)
+      channel = Channels.index(Channels.find { |c| r == 255 - (1 << Channels.index(c)) })
+      value = (255 - g) / 255.0
+      new(channel, value)
     end
     
-    def initialize(*args)
-      if args.length == 2 # channel_num, value
-        channel, value = *args
-        case channel
-        when String, Symbol
-          @channel_num = Channels.index(channel.to_s.upcase.to_sym) or raise "Unknown channel: #{channel.inspect}"
-        else
-          @channel_num = channel
-        end
-        @value = value
-      else # r, g, b
-        raise "value out of range: #{args.inspect}" if args.find { |a| a > 0 && a < 1 }
-        rgb = Color::RGB.new(*args)
-        @channel_num = Channels.index(Channels.find { |i| rgb.red == 255 - (1 << Channels.index(i)) })
-        @value = rgb.green / 255.0
+    def self.from_cgats(r, g, b)
+      from_rgb(r, g, b)
+    end
+    
+    def initialize(channel, value)
+      super(value)
+      @channel_num = case channel
+      when String, Symbol
+        Channels.index(channel.to_s.upcase.to_sym) or raise "Unknown channel: #{channel.inspect}"
+      when Numeric
+        channel
+      else
+        raise "Unknown channel type: #{channel.inspect}"
       end
     end
     
-    def channel_key
+    def channel
       Channels[@channel_num]
     end
     
     def to_rgb
-      Color::RGB.new(
+      [
         255 - (1 << @channel_num),
-        (255 * @value).to_i,
-        255)
+        (255 - (255 * @value)).to_i,
+        255
+      ]
     end
-    
-    def to_grayscale
-      Color::GrayScale.from_fraction(@value)
-    end
-    
-    def density
-      to_grayscale.density
+        
+    def to_cgats
+      to_rgb
     end
     
     def html
-      to_rgb.html
-    end
-    
-    def inspect
-      "QTR [%s:%.2f]" % [channel_key || @channel_num, @value]
+      '#' + (to_rgb.map { |n| "%02x" % n }.join)
     end
     
     def hash
@@ -92,6 +84,10 @@ module Color
       [@channel_num, @value] == [other.channel_num, other.value]
     end
   
+    def inspect
+      "<%s: %.2f>" % [channel || @channel_num, @value * 100]
+    end
+    
   end
   
 end

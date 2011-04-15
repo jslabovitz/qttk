@@ -32,7 +32,6 @@ module Quadtone
       @gray_overlap = 10
       @gray_gamma = 1
       params.each { |key, value| method("#{key}=").call(value) }
-      read_curvesets!
     end
     
     def to_yaml_properties
@@ -109,19 +108,16 @@ module Quadtone
     
     def build_characterization_target
       curveset = CurveSet::QTR.new(@inks)
-      curveset.generate
-      # target = Target.new(17 - 1)   # tabloid size (11x17), for 17" roll paper, less margins
+      curveset.generate_scale
       target = Target.new
-      oversample = 4
-      steps = target.max_samples / (curveset.num_channels * oversample)
-      curveset.fill_target(target, :steps => steps, :oversample => oversample)
+      curveset.fill_target(target, :steps => 29, :oversample => 4)
       target.write_image_file(characterization_reference_path.with_extname('.tif'))
       target.write_cgats_file(characterization_reference_path)
     end
     
     def build_linearization_target
       curveset = CurveSet::Grayscale.new
-      curveset.generate
+      curveset.generate_scale
       target = Target.new
       curveset.fill_target(target, :steps => 51, :oversample => 4)
       target.write_image_file(linearization_reference_path.with_extname('.tif'))
@@ -141,7 +137,7 @@ module Quadtone
       
       io.puts "DEFAULT_INK_LIMIT=#{@default_ink_limit * 100}"
       @characterization_curveset.curves.each do |curve|
-        io.puts "LIMIT_#{curve.key}=#{curve.ink_limit.input * 100}"
+        io.puts "LIMIT_#{curve.key}=#{curve.ink_limit.input.value * 100}"
       end
       io.puts
       
@@ -149,9 +145,9 @@ module Quadtone
       io.puts
       
       @characterization_curveset.separations.each_with_index do |separation, i|
-        channel_key, density = *separation
-        io.puts "GRAY_INK_#{i+1}=#{channel_key}"
-        io.puts "GRAY_VAL_#{i+1}=#{density * 100}"
+        channel, input = *separation
+        io.puts "GRAY_INK_#{i+1}=#{channel}"
+        io.puts "GRAY_VAL_#{i+1}=#{input.value * 100}"
         io.puts
       end
       
@@ -163,8 +159,8 @@ module Quadtone
       
       if @linearization_curveset
         curve = @linearization_curveset.curves.first
-        output_scale = curve.input_scale(21).map { |input| curve[input] }
-        io.puts "LINEARIZE=\"#{output_scale.map { |o| 100 - (o * 100) }.join(' ')}\""
+        scale = curve.input_scale(21)
+        io.puts "LINEARIZE=\"#{scale.map { |point| 100 - (point.output.value * 100) }.join(' ')}\""
       end
     end
     
@@ -188,16 +184,15 @@ module Quadtone
     def dump_printer_options
       ppd = CupsPPD.new(@printer)
       default_page_size = ppd.attribute('DefaultPageSize').first[:value]
-      puts "Page size (#{default_page_size}):"
-      ;;pp ppd.page_size(default_page_size)
-      puts "Attributes:"
-      ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
-        puts "\t" + "%s%s: %s" % [
-          attribute[:name],
-          attribute[:spec].empty? ? '' : " (#{attribute[:spec]})",
-          attribute[:value]
-        ]
-      end
+      puts "Page size (#{default_page_size}): #{ppd.page_size(default_page_size).inspect}"
+      # puts "Attributes:"
+      # ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
+      #   puts "\t" + "%s%s: %s" % [
+      #     attribute[:name],
+      #     attribute[:spec].empty? ? '' : " (#{attribute[:spec]})",
+      #     attribute[:value]
+      #   ]
+      # end
       puts "Options:"
       ppd.options.sort_by { |o| o[:keyword] }.each do |option|
         puts "\t" + "%s: %s [%s]" % [

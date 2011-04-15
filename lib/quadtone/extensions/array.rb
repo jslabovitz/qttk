@@ -1,7 +1,7 @@
 class Array
     
   def sum
-    inject(0) { |sum, x| sum + x}
+    inject(&:+)
   end
   
   def mean
@@ -13,12 +13,11 @@ class Array
   
   def mean_stdev
     m = mean
-    variance = inject(0) { |v, x| v + ((x - m) ** 2) }
-    [m, Math::sqrt(variance / size)]
+    variance = inject(0) { |v, x| v + ((x - m) ** 2) } / size
+    [m, Math::sqrt(variance)]
   end
   
   # http://en.wikipedia.org/wiki/Mean#Weighted_arithmetic_mean
-  
   def weighted_mean(weights)
     raise "Each element of the array must have an accompanying weight.  Array length = #{self.size} versus Weights length = #{weights_array.size}" if weights_array.size != self.size
     w_sum = weights.sum
@@ -27,6 +26,20 @@ class Array
     w_prod.to_f / w_sum.to_f
   end
 
+  def median
+  	if length % 2 == 0
+  		[self[(length / 2) - 1], self[length / 2]].mean
+		else
+    	self[length / 2]
+  	end
+  end
+  
+  # http://en.wikipedia.org/wiki/Median_absolute_deviation
+  def mad
+    m = median
+  	map { |n| (n - m).abs }.median
+  end
+  
   def randomize(seed=nil)
     old_seed = srand(seed) if seed
     new_array = sort_by { rand }

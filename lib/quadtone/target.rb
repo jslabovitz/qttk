@@ -16,9 +16,9 @@ module Quadtone
   class Target
   
     Fields = {
-      Color::QTR        => %w{RGB_R RGB_G RGB_B},
-      Color::GrayScale  => %w{GRAY},
-      Color::Lab        => %w{LAB_L LAB_A LAB_B}
+      Color::QTR  => %w{RGB_R RGB_G RGB_B},
+      Color::Gray => %w{GRAY},
+      Color::Lab  => %w{LAB_L LAB_A LAB_B}
     }
     
     LabelFontSize     = 10
@@ -39,8 +39,8 @@ module Quadtone
     end
   
     def initialize(height_inches=8)
-      @background_color = Color::GrayScale.new(100)
-      @foreground_color = Color::GrayScale.new(0)
+      @background_color = Color::Gray.new(0)
+      @foreground_color = Color::Gray.new(1)
       @max_rows = ((height_inches * 72) / PatchSize).round - 1
       @table = [[]]
     end
@@ -56,7 +56,6 @@ module Quadtone
     def <<(samples)
       [samples].flatten.each do |sample|
         raise "Too many samples (would exceed #{max_samples})" if samples.length + 1 == max_samples
-        sample = Sample.new(sample, nil) unless sample.kind_of?(Sample)
         cur_row = @table[-1]
         if cur_row.length == MaxColumns
           @table << (cur_row = [])
@@ -70,7 +69,7 @@ module Quadtone
     end
   
     def num_columns
-      @table.map { |col| col.length }.max
+      @table.map(&:length).max
     end
   
     def samples

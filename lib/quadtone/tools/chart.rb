@@ -11,7 +11,7 @@ module Quadtone
         mode = target.color_mode
         if mode == Color::QTR
           curveset = CurveSet::QTR.from_samples(target.samples)
-        elsif mode == Color::GrayScale
+        elsif mode == Color::Gray
           curveset = CurveSet::Grayscale.from_samples(target.samples)
         else
           raise "Don't know how to chart target in color mode #{mode.inspect}"

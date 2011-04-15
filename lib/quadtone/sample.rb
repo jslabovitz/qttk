@@ -18,36 +18,20 @@ module Quadtone
   
     def parse_cgats_data!(set)
       Target::Fields.each do |klass, fields|
-        if set[fields.first]
-          color = klass.new(*fields.map { |f| set[f] })
-          case color
-          when Color::QTR
-            @input = color
-          when Color::GrayScale
-            color.g = 1 - color.g
-            @input = color
-          when Color::Lab
+        data = fields.map { |f| set[f] }.compact
+        if data.length > 0
+          color = klass.from_cgats(*data)
+          if color.kind_of?(Color::Lab)
             @output = color
           else
-            raise "Can't parse CGATS data: #{set.inspect}"
+            @input = color
           end
         end
       end
     end
         
     def to_cgats_data
-      data = []
-      case @input
-      when Color::QTR
-        rgb = @input.to_rgb
-        data.concat([rgb.red.to_i, rgb.green.to_i, rgb.blue.to_i])
-      when Color::GrayScale
-        data.concat([100 - @input.gray])
-      else
-        raise "Can't convert to CGATS data: #{inspect}"
-      end
-      data.concat([@output.l, @output.a, @output.b]) if @output
-      data
+      [@input.to_cgats, @output ? @output.to_cgats : []].flatten
     end
   
   end

@@ -5,13 +5,16 @@ module Quadtone
     attr_accessor :key
     attr_accessor :points
     attr_accessor :resolution
+    attr_accessor :chroma_limit
+    attr_accessor :density_limit
+    attr_accessor :delta_e_limit
     
     def initialize(key, points)
       @key = key
-      @points = points.sort_by { |p| p.input }
+      @points = points.sort_by(&:input)
       @resolution = 11
-      initial_spline = Spline.new(@points)
-      resampled_points = input_scale(@resolution).map { |input| Point.new(input, initial_spline[input]) }
+      @spline = Spline.new(@points)
+      resampled_points = input_scale(@resolution)
       @spline = Spline.new(resampled_points)
     end
     
@@ -24,35 +27,42 @@ module Quadtone
     end
     
     def input_scale(steps=21)
-      range = @points.first.input .. @points.last.input
-      range.step(1.0 / (steps - 1)).to_a
+      range = @points.first.input.value .. @points.last.input.value
+      range.step(1.0 / (steps - 1)).map do |v|
+        input = Color::Gray.new(v)
+        Point.new(input, self[input])
+      end
     end
     
     def num_points
       @points.length
     end
-      
-    def find_relative_density(output, resolution=100)
-      relative = input_scale(resolution).find { |input| output <= self[input] }
-      #FIXME: Scale like this?
-      # relative *= max_input_density
-      relative
+    
+    def find_relative_value(desired, resolution=100)
+      input_scale(resolution).find { |point| desired.value <= point.output.value }.input
+    end
+    
+    def find_ink_limits!
+      points = input_scale(100)
+      @density_limit = points.sort_by { |p| p.output.value }.last
+      @chroma_limit = points.sort_by { |p| p.output.chroma }.first
+      @delta_e_limit = nil
+      (0 .. points.length - 2).each do |i|
+        point, next_point = points[i], points[i + 1]
+        delta_e = point.output.delta_e(next_point.output, :density)
+        if delta_e < 0.3
+          @delta_e_limit = point
+          break
+        end
+      end
     end
     
     def ink_limit
-      #FIXME
-      @points.last
+      # find minimum of chroma, density, delta_e
+      [@chroma_limit, @density_limit, @delta_e_limit].sort_by { |pt| pt.input.value }.first
     end
     
-    def ink_limits
-      #FIXME
-      {
-        :chroma => @points.last,
-        :density => @points.last,
-      }
-    end
-    
-    class Point < Struct.new(:input, :output, :stdev); end
+    class Point < Struct.new(:input, :output, :error); end
     
     class Spline
       
@@ -66,17 +76,24 @@ module Quadtone
         else
           raise "Curve must have at least two points"
         end
-        inputs = GSL::Vector[points.length]
-        outputs = GSL::Vector[points.length]
-        points.each_with_index do |point, i|
-          inputs[i]  = point.input
-          outputs[i] = point.output ? point.output : point.input
+        @color_class = points.first.output.class
+        @gsl_splines = {}
+        @color_class.components.each do |component|
+          inputs = GSL::Vector[points.length]
+          outputs = GSL::Vector[points.length]
+          points.each_with_index do |point, i|
+            inputs[i]  = point.input.value
+            outputs[i] = point.output.method(component).call
+          end
+          @gsl_splines[component] = GSL::Spline.alloc(type, inputs, outputs)
         end
-        @gsl_spline = GSL::Spline.alloc(type, inputs, outputs)
       end
       
       def [](input)
-        @gsl_spline.eval(input)
+        component_values = @color_class.components.map do |component|
+          @gsl_splines[component].eval(input.value)
+        end
+        @color_class.new(*component_values)
       end
       
     end
