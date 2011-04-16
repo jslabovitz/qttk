@@ -5,6 +5,7 @@ module Quadtone
     attr_accessor :base_dir
     attr_accessor :name
     attr_accessor :printer
+    attr_accessor :printer_options
     attr_accessor :inks
     attr_accessor :characterization_curveset
     attr_accessor :linearization_curveset
@@ -17,6 +18,7 @@ module Quadtone
     ProfileName = 'profile'
     CharacterizationName = 'characterization'
     LinearizationName = 'linearization'
+    ImportantPrinterOptions = %w{MediaType Resolution ripSpeed stpDither}
     
     def self.from_dir(base_dir=Pathname.new('.'))
       profile = YAML::load((base_dir + "#{ProfileName}.yaml").open.read)
@@ -26,12 +28,18 @@ module Quadtone
     
     def initialize(params={})
       @base_dir = Pathname.new('.')
+      @printer_options = {}
       @default_ink_limit = 1
       @gray_highlight = 6
       @gray_shadow = 6
       @gray_overlap = 10
       @gray_gamma = 1
       params.each { |key, value| method("#{key}=").call(value) }
+      raise "No printer specified" unless @printer
+      ppd_options = CupsPPD.new(@printer).options
+      ImportantPrinterOptions.map { |o| ppd_options.find { |po| po[:keyword] == o } }.each do |option|
+        @printer_options[option[:keyword]] ||= option[:default_choice]
+      end
     end
     
     def to_yaml_properties
@@ -119,7 +127,7 @@ module Quadtone
       curveset = CurveSet::Grayscale.new
       curveset.generate_scale
       target = Target.new
-      curveset.fill_target(target, :steps => 51, :oversample => 4)
+      curveset.fill_target(target, :steps => 21, :oversample => 4)
       target.write_image_file(linearization_reference_path.with_extname('.tif'))
       target.write_cgats_file(linearization_reference_path)
     end
@@ -178,6 +186,7 @@ module Quadtone
       if options['ColorModel'] != 'QTCAL'
         options['ripCurve1'] = @name
       end
+      options.merge!(@printer_options)
       printer.print_file(image_path, options)
     end
     

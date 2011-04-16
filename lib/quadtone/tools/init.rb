@@ -8,6 +8,12 @@ module Quadtone
     attr_accessor :name
     attr_accessor :printer
     attr_accessor :inks
+    attr_accessor :resolution
+    
+    def initialize
+      #FIXME: Use cupsffi
+      @printer = `lpstat -d`.chomp.sub(/system default destination: /, '')
+    end
     
     def parse_option(option, args)
       case option
@@ -15,26 +21,22 @@ module Quadtone
         inks = args.shift.split(/\s+|,/)
         #FIXME: Handle negation (-LLK)
         @inks = inks.map { |ink| ink.to_sym }
+      when '--printer', '-p'
+        @printer = args.shift
+      when '--resolution', '-r'
+        @resolution = args.shift
       end
     end
   
-    def run(name, printer)
-
-      # - initialize
-      # 
-      #   - describe profile:
-      #     - name (paper, channels)
-      #     - printer (name)
-      #     - channels to be used
-      #   - create unlimited QTR target reference with defined channels
-      #   - create grayscale target
-
-      # ;;@inks = CurveSet::QTR.all_channels - [:LLK, :M]
-
+    def run(name)
       profile = Profile.new(
         :name => name,
-        :printer => printer,
-        :inks => @inks)
+        :printer => @printer,
+        :printer_options => {
+          'Resolution' => @resolution,
+        },
+        :inks => @inks,
+      )
       profile.save!
       profile.build_targets
     end
