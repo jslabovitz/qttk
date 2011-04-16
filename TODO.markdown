@@ -11,6 +11,8 @@
   - Too much deviation in samples.
   - Ink limit too low.
 - Scale gray values in profile by ink limits?
+- Confirm ink-limiting:
+    http://lists.apple.com/archives/colorsync-users/2007/Jan/msg00379.html
 - Verify limiting/separation algorithms.
   - Generate sample data.
   - Write tests to verify operations.
