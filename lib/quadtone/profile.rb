@@ -159,8 +159,8 @@ module Quadtone
       
       if @linearization_curveset
         curve = @linearization_curveset.curves.first
-        scale = curve.input_scale(21)
-        io.puts "LINEARIZE=\"#{scale.map { |point| 100 - (point.output.value * 100) }.join(' ')}\""
+        points = curve.interpolated_points(21)
+        io.puts "LINEARIZE=\"#{points.map { |p| p.output.l }.join(' ')}\""
       end
     end
     

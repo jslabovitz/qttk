@@ -14,7 +14,7 @@ module Quadtone
       @points = points.sort_by(&:input)
       @resolution = 11
       @spline = Spline.new(@points)
-      resampled_points = input_scale(@resolution)
+      resampled_points = interpolated_points(@resolution)
       @spline = Spline.new(resampled_points)
     end
     
@@ -26,7 +26,7 @@ module Quadtone
       @spline[input]
     end
     
-    def input_scale(steps=21)
+    def interpolated_points(steps)
       range = @points.first.input.value .. @points.last.input.value
       range.step(1.0 / (steps - 1)).map do |v|
         input = Color::Gray.new(v)
@@ -39,11 +39,11 @@ module Quadtone
     end
     
     def find_relative_value(desired, resolution=100)
-      input_scale(resolution).find { |point| desired.value <= point.output.value }.input
+      interpolated_points(resolution).find { |point| desired.value <= point.output.value }.input
     end
     
     def find_ink_limits!
-      points = input_scale(100)
+      points = interpolated_points(100)
       @density_limit = points.sort_by { |p| p.output.value }.last
       @chroma_limit = points.sort_by { |p| p.output.chroma }.first
       @delta_e_limit = nil

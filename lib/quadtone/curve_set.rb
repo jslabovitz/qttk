@@ -135,7 +135,7 @@ module Quadtone
           end
           
           # draw interpolated curve
-          points = curve.input_scale(size).map do |point|
+          points = curve.interpolated_points(size).map do |point|
             [size * point.input.value, size * (1 - point.output.value)]
           end
           xml.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
@@ -188,7 +188,7 @@ module Quadtone
       samples = []
       @curves.each do |curve|
         # create scale for this channel
-        scale_samples = curve.input_scale(steps).map do |point|
+        scale_samples = curve.interpolated_points(steps).map do |point|
           Sample.new(self.class.color_for_channel_value(curve.key, point.input.value), nil)
         end
         # add multiple instances of each sample for each channel
