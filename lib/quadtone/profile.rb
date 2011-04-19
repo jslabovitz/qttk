@@ -167,8 +167,8 @@ module Quadtone
       
       if @linearization_curveset
         curve = @linearization_curveset.curves.first
-        points = curve.interpolated_points(21)
-        io.puts "LINEARIZE=\"#{points.map { |p| p.output.l }.join(' ')}\""
+        samples = curve.interpolated_samples(21)
+        io.puts "LINEARIZE=\"#{samples.map { |p| p.output.l }.join(' ')}\""
       end
     end
     

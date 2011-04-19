@@ -1,10 +1,9 @@
 # TODO
 
-- Replace Sample with Point.
-
 - Retain individual output samples from measured target
   - Average while making curve (spline)
   - Show individual points in chart.
+  - Also use for oversampling when generating target.
   
 - Submit 'cupsffi' changes to maintainer.
   - Remove hard-coded 'require' of 'cupsffi'.

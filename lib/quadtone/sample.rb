@@ -4,6 +4,7 @@ module Quadtone
   
     attr_accessor :input
     attr_accessor :output
+    attr_accessor :error
         
     def self.from_cgats_data(set)
       sample = new(nil, nil)
@@ -11,9 +12,10 @@ module Quadtone
       sample
     end
   
-    def initialize(input, output)
+    def initialize(input, output, error=nil)
       @input = input
       @output = output
+      @error = error
     end
   
     def parse_cgats_data!(set)

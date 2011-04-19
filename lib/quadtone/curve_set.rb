@@ -26,11 +26,11 @@ module Quadtone
     
     def generate_scale
       @curves = @channels.map do |channel|
-        points = [
-          Curve::Point.new(Color::Gray.new(0), Color::Gray.new(0)), 
-          Curve::Point.new(Color::Gray.new(1), Color::Gray.new(1))
+        samples = [
+          Sample.new(Color::Gray.new(0), Color::Gray.new(0)), 
+          Sample.new(Color::Gray.new(1), Color::Gray.new(1))
         ]
-        Curve.new(channel, points)
+        Curve.new(channel, samples)
       end
     end
 
@@ -51,17 +51,17 @@ module Quadtone
       # average multiple readings
       values.each do |channel, inputs|
         values[channel] = inputs.sort.map do |input, outputs|
-          point = Curve::Point.new(input, *outputs.first.class.average(outputs))
-          ;;warn "#{input.inspect}: point error out of range: #{point.error}" if point.error >= 1
-          point
+          sample = Sample.new(input, *outputs.first.class.average(outputs))
+          ;;warn "#{input.inspect}: sample error out of range: #{sample.error}" if sample.error && sample.error >= 1
+          sample
         end
       end
       # find paper value
       paper_shades = values.delete(:P) or raise "No paper sample found!"
       @paper = paper_shades.first
       # create actual curves
-      @curves = values.map do |channel, points|
-        curve = Curve.new(channel, [@paper] + points)
+      @curves = values.map do |channel, samples|
+        curve = Curve.new(channel, [@paper] + samples)
         curve.find_ink_limits!
         curve
       end
@@ -87,15 +87,15 @@ module Quadtone
   		# "## QuadToneRIP KCMY"
       channel_list = $1
       @curves = ($1.split(channel_list =~ /,/ ? ',' : //)).map { |c| ChannelAliases[c] || c.to_sym }.map do |channel|
-        points = (0..255).to_a.map do |input|
+        samples = (0..255).to_a.map do |input|
           lines.shift while lines.first =~ /^#/
           line = lines.shift
           line =~ /^(\d+)$/ or raise "Unexpected value: #{line.inspect}"
           output = $1.to_i
-  		    Curve::Point.new(input / 255.0, output / 65535.0)
+  		    Sample.new(input / 255.0, output / 65535.0)
   			end
         # curve = nil if curve.empty? || curve.uniq == [0]
-  		  Curve.new(channel, points)
+  		  Curve.new(channel, samples)
   		end
     end
     
@@ -106,7 +106,7 @@ module Quadtone
     def separations
       curves = @curves.sort_by { |c| c.ink_limit.output }.reverse
       darkest_curve = curves.shift
-      separations = { darkest_curve.key => darkest_curve.points.last.input }
+      separations = { darkest_curve.key => darkest_curve.samples.last.input }
       curves.each do |curve|
         separations[curve.key] = darkest_curve.find_relative_value(curve.ink_limit.output) \
           or raise "Can't find relative density for #{curve.ink_limit.output.density} in curve #{darkest_curve.key.inspect}"
@@ -124,22 +124,22 @@ module Quadtone
         end
         @curves.each do |curve|
 
-          # draw individual points
-          curve.points.each do |point|
-            xml.circle(:cx => size * point.input.value, :cy => size * (1 - point.output.value), :r => 2, :stroke => 'none', :fill => "rgb(#{point.output.to_rgb.join(',')})")
+          # draw individual samples
+          curve.samples.each do |sample|
+            xml.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2, :stroke => 'none', :fill => "rgb(#{sample.output.to_rgb.join(',')})")
             #FIXME: If Lab color, somehow draw a/b values
             #FIXME: Parameterize error threshold
-            if point.error > 0.05
-              xml.circle(:cx => size * point.input.value, :cy => size * (1 - point.output.value), :r => 2 + (point.error * 10), :stroke => 'red', :fill => 'none')
+            if sample.error && sample.error > 0.05
+              xml.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2 + (sample.error * 10), :stroke => 'red', :fill => 'none')
             end
           end
           
           # draw interpolated curve
-          points = curve.interpolated_points(size).map do |point|
-            [size * point.input.value, size * (1 - point.output.value)]
+          samples = curve.interpolated_samples(size).map do |sample|
+            [size * sample.input.value, size * (1 - sample.output.value)]
           end
           xml.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
-            xml.polyline(:points => points.map { |pt| pt.join(',') }.join(' '))
+            xml.polyline(:points => samples.map { |pt| pt.join(',') }.join(' '))
           end
           
           # draw marker for ink limit (chroma)
@@ -188,8 +188,8 @@ module Quadtone
       samples = []
       @curves.each do |curve|
         # create scale for this channel
-        scale_samples = curve.interpolated_points(steps).map do |point|
-          Sample.new(self.class.color_for_channel_value(curve.key, point.input.value), nil)
+        scale_samples = curve.interpolated_samples(steps).map do |sample|
+          Sample.new(self.class.color_for_channel_value(curve.key, sample.input.value), nil)
         end
         # add multiple instances of each sample for each channel
         samples += scale_samples * oversample

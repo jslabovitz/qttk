@@ -3,19 +3,18 @@ module Quadtone
   class Curve
     
     attr_accessor :key
-    attr_accessor :points
+    attr_accessor :samples
     attr_accessor :resolution
     attr_accessor :chroma_limit
     attr_accessor :density_limit
     attr_accessor :delta_e_limit
     
-    def initialize(key, points)
+    def initialize(key, samples)
       @key = key
-      @points = points.sort_by(&:input)
+      @samples = samples.sort_by(&:input)
       @resolution = 11
-      @spline = Spline.new(@points)
-      resampled_points = interpolated_points(@resolution)
-      @spline = Spline.new(resampled_points)
+      @spline = Spline.new(@samples)
+      @spline = Spline.new(interpolated_samples(@resolution))
     end
     
     def to_yaml_properties
@@ -26,32 +25,32 @@ module Quadtone
       @spline[input]
     end
     
-    def interpolated_points(steps)
-      range = @points.first.input.value .. @points.last.input.value
+    def interpolated_samples(steps)
+      range = @samples.first.input.value .. @samples.last.input.value
       range.step(1.0 / (steps - 1)).map do |v|
         input = Color::Gray.new(v)
-        Point.new(input, self[input])
+        Sample.new(input, self[input])
       end
     end
     
-    def num_points
-      @points.length
+    def num_samples
+      @samples.length
     end
     
     def find_relative_value(desired, resolution=100)
-      interpolated_points(resolution).find { |point| desired.value <= point.output.value }.input
+      interpolated_samples(resolution).find { |sample| desired.value <= sample.output.value }.input
     end
     
     def find_ink_limits!
-      points = interpolated_points(100)
-      @density_limit = points.sort_by { |p| p.output.value }.last
-      @chroma_limit = points.sort_by { |p| p.output.chroma }.first
+      samples = interpolated_samples(100)
+      @density_limit = samples.sort_by { |p| p.output.value }.last
+      @chroma_limit = samples.sort_by { |p| p.output.chroma }.first
       @delta_e_limit = nil
-      (0 .. points.length - 2).each do |i|
-        point, next_point = points[i], points[i + 1]
-        delta_e = point.output.delta_e(next_point.output, :density)
+      (0 .. samples.length - 2).each do |i|
+        sample, next_sample = samples[i], samples[i + 1]
+        delta_e = sample.output.delta_e(next_sample.output, :density)
         if delta_e < 0.3
-          @delta_e_limit = point
+          @delta_e_limit = sample
           break
         end
       end
@@ -61,29 +60,27 @@ module Quadtone
       # find minimum of chroma, density, delta_e
       [@chroma_limit, @density_limit, @delta_e_limit].sort_by { |pt| pt.input.value }.first
     end
-    
-    class Point < Struct.new(:input, :output, :error); end
-    
+        
     class Spline
       
-      def initialize(points)
-        if points.length >= 5
+      def initialize(samples)
+        if samples.length >= 5
           type = 'akima'
-        elsif points.length >= 3
+        elsif samples.length >= 3
           type = 'cspline'
-        elsif points.length >= 2
+        elsif samples.length >= 2
           type = 'linear'
         else
-          raise "Curve must have at least two points"
+          raise "Curve must have at least two samples"
         end
-        @color_class = points.first.output.class
+        @color_class = samples.first.output.class
         @gsl_splines = {}
         @color_class.components.each do |component|
-          inputs = GSL::Vector[points.length]
-          outputs = GSL::Vector[points.length]
-          points.each_with_index do |point, i|
-            inputs[i]  = point.input.value
-            outputs[i] = point.output.method(component).call
+          inputs = GSL::Vector[samples.length]
+          outputs = GSL::Vector[samples.length]
+          samples.each_with_index do |sample, i|
+            inputs[i]  = sample.input.value
+            outputs[i] = sample.output.method(component).call
           end
           @gsl_splines[component] = GSL::Spline.alloc(type, inputs, outputs)
         end
