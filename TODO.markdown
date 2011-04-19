@@ -1,7 +1,5 @@
 # TODO
 
-- Figure out why 21x4 target takes up 5 rows.
-
 - Replace Sample with Point.
 
 - Retain individual output samples from measured target

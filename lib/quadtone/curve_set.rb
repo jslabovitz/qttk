@@ -195,8 +195,11 @@ module Quadtone
         samples.concat(scale_samples * oversample)
       end
       # fill remaining slots with background color
-      remaining = target.max_columns - (samples.length % target.max_columns)
-      samples.concat([Sample.new(self.class.target_background_color, nil)] * remaining)
+      remaining = samples.length % target.max_columns
+      if remaining != 0
+        remaining = target.max_columns - remaining
+        samples.concat([Sample.new(self.class.target_background_color, nil)] * remaining)
+      end
       ;;warn "generated #{samples.length} samples covering channels: #{@channels.join(' ')} using #{steps} steps @ #{oversample}x oversampling (plus #{remaining} paper samples)"
       # add samples randomly, starting with known seed so we get equivalent randomization
       target << samples.randomize(1)
