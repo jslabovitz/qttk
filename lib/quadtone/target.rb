@@ -134,18 +134,11 @@ module Quadtone
         end
         canvas.g.translate(0, RowLabelHeight) { |g| draw_row_labels(g) }
         canvas.g.translate(ColumnLabelWidth, 0) { |g| draw_column_labels(g) }
-        # draw_header(g)
       end
       rvg.draw
     end
     
     private
-    
-    def draw_header(image)
-      draw = Magick::Draw.new
-      # draw.translate(x, y)
-      draw.draw(image)
-    end
     
     def draw_row_labels(g)
       num_rows.times do |row|
