@@ -38,8 +38,9 @@ module Quadtone
       values = {}
       samples.each do |sample|
         raise "Sample is missing output data: #{sample.inspect}" if sample.output.nil?
-        if sample.input.kind_of?(Color::QTR)
-          channel = sample.input.channel
+        case sample.input
+        when Color::QTR
+          channel = sample.input.channel_name
         else
           channel = :G
         end
@@ -181,8 +182,16 @@ module Quadtone
     end
   
     def fill_target(target, options={})
-      steps = options[:steps] || 21
-      oversample = options[:oversample] || 4
+      steps = options[:steps]
+      oversample = options[:oversample]
+      if steps.nil?
+        raise "Must specify oversample" unless oversample
+        steps = target.max_samples / (oversample * @curves.length)
+      elsif oversample.nil?
+        raise "Must specify steps" unless steps
+        oversample = target.max_samples / (steps * @curves.length)
+      end
+      raise "Must specify either steps or oversample" unless steps && oversample
       target.background_color = self.class.target_background_color
       target.foreground_color = self.class.target_foreground_color
       samples = []
@@ -194,11 +203,9 @@ module Quadtone
         # add multiple instances of each sample for each channel
         samples += scale_samples * oversample
       end
-      # fill remaining slots with background color
-      remaining = samples.length % target.max_columns
-      if remaining != 0
-        remaining = target.max_columns - remaining
-        samples += [Sample.new(self.class.target_background_color, nil)] * remaining
+      # fill remaining slots in final column with background color, if needed
+      if (remaining = samples.length % target.max_columns) != 0
+        samples += [Sample.new(self.class.target_background_color, nil)] * (target.max_columns - remaining)
       end
       ;;warn "generated #{samples.length} samples covering channels: #{@channels.join(' ')} using #{steps} steps @ #{oversample}x oversampling (plus #{remaining} paper samples)"
       # add samples randomly, starting with known seed so we get equivalent randomization
@@ -215,7 +222,7 @@ module Quadtone
     class QTR < CurveSet
     
       def self.all_channels
-        Color::QTR::Channels
+        Color::QTR.component_names
       end
     
       def self.color_for_channel_value(channel, value)
@@ -228,6 +235,28 @@ module Quadtone
     
       def self.target_foreground_color
         Color::QTR.new(:K, 1)
+      end
+    
+    end
+  
+    class DeviceN < CurveSet
+    
+      def self.all_channels
+        Color::DeviceN.component_names
+      end
+    
+      def self.color_for_channel_value(channel, value)
+        components = [0] * Color::DeviceN.num_components
+        components[channel] = value
+        Color::DeviceN.new(components)
+      end
+    
+      def self.target_background_color
+        Color::DeviceN.new([0])
+      end
+    
+      def self.target_foreground_color
+        Color::DeviceN.new([1])
       end
     
     end

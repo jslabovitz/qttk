@@ -1,5 +1,11 @@
 # TODO
 
+- Make 'init' tool only create profile.
+  - Add new 'target' tool to generate target reference files & images.
+
+- Add initial ink-limit to profile/target.
+  - To allow for more accurate results on papers known to be very absorbent.
+  
 - Retain individual output samples from measured target
   - Average while making curve (spline)
   - Show individual points in chart.
@@ -8,19 +14,16 @@
 - Submit 'cupsffi' changes to maintainer.
   - Remove hard-coded 'require' of 'cupsffi'.
 
-- Get media page/margins from PPD file for printing target.
-
 - Include test reference image in gem distribution, rather than using something in ~/Downloads.
 
 - Detect & remove bad ink:
   - Too much deviation in samples.
   - Ink limit too low.
 
-- Scale gray values in profile by ink limits?
-
 - Verify limiting/separation algorithms.
   - Generate sample data.
   - Write tests to verify operations.
+  - Scale gray values in profile by ink limits?
     http://lists.apple.com/archives/colorsync-users/2007/Jan/msg00379.html
 
 - Remove hardcoded/assumptions (eg, inks, paper sizes).
@@ -28,6 +31,18 @@
 - Experiment with whether more steps or over-sampling is better.
 
 - Determine optimum delta-E for ink detection (& make configurable).
+
+- Build web interface.
+  - Create account.
+  - Create new profile.
+  - Generate reference/target files.
+    - Download as ZIP archive.
+  - Upload measured files.
+  - Analyze/visualize measurements.
+  - Generate QTR profile.
+    - Download QTR profile.
+  - Maybe small raw-printing utility, in MacRuby?
+  - Eventually, curve-builder and installer?
 
 - Add '--print' option to target generation, so target can be generated & printed in one step.
 
@@ -39,8 +54,6 @@
 
 - Improve target:
   - Let test targets cross multiple pages:
-    - Calculate rows per page.
-    - Raise error on too many samples only if can't fit on max number of pages.
   - Add info banner to target:
     - Mode (characterization, linearization, etc.)
     - Date
@@ -71,7 +84,6 @@
 
 - Make Target & Sample classes more generic:
   - Limit color knowledge to grayscale, RGB, and Lab (handle QTR in CurveSet).
-  - Rename Sample class to Target::Sample.
 
 - Create guide for process (on wiki).
 
@@ -83,3 +95,6 @@
 - Use Jones diagrams for showing data <http://en.wikipedia.org/wiki/Jones_diagram>.
 
 - Figure out why ColorPort fails to read our reference target file.
+
+- Bypass QTR entirely
+  - Use Gutenprint to generate ESC/P2 files.

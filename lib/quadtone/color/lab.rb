@@ -1,56 +1,56 @@
-module Math
-  
-  def deg2rad(deg)
-    deg * (PI / 180)
-  end
-  
-  def rad2deg(rad)
-    rad * (180 / PI)
-  end
-  
-end
-
 module Color
   
-  class Lab < Gray
+  class Lab < Base
     
     include Math
     
-    attr_accessor :a
-    attr_accessor :b
-    
     def self.from_lab(l, a, b)
       new((100 - l) / 100.0, a, b)
+    end
+    
+    def self.cgats_fields
+      %w{LAB_L LAB_A LAB_B}
     end
     
     def self.from_cgats(l, a, b)
       from_lab(l, a, b)
     end
     
-    def self.components
+    def self.component_names
       [:value, :a, :b]
     end
     
     def initialize(value, a=0, b=0)
-      super(value)
-      @a, @b = a.to_f, b.to_f
+      super([value, a.to_f, b.to_f])
     end
         
+    def value
+      @components[0]
+    end
+
     def l
-      100 - (@value * 100)
+      100 - (@components[0] * 100)
+    end
+    
+    def a
+      @components[1]
+    end
+    
+    def b
+      @components[2]
     end
     
     def chroma
       # http://www.brucelindbloom.com/Eqn_Lab_to_LCH.html
-      sqrt((@a * @a) + (@b * @b))
+      sqrt((a * a) + (b * b))
     end
     
     def hue
       # http://www.brucelindbloom.com/Eqn_Lab_to_LCH.html
-      if @a == 0 && @b == 0
+      if a == 0 && b == 0
         0
       else
-        rad2deg(atan2(@b, @a)) % 360
+        rad2deg(atan2(b, a)) % 360
       end
     end
     
@@ -173,16 +173,8 @@ module Color
       [r, g, b]
     end
     
-    def hash
-      [@value, @a, @b].hash
-    end
-    
-    def eql?(other)
-      [@value, @a, @b] == [other.value, other.a, other.b]
-    end
-    
     def inspect
-      "<Lab: L=%.2f, a=%.2f, b=%.2f>" % [l, @a, @b]
+      "<Lab: L=%.2f, a=%.2f, b=%.2f>" % [l, a, b]
     end
     
   end

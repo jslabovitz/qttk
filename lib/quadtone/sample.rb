@@ -19,10 +19,10 @@ module Quadtone
     end
   
     def parse_cgats_data!(set)
-      Target::Fields.each do |klass, fields|
-        data = fields.map { |f| set[f] }.compact
+      Target::Colors.each do |color_class|
+        data = color_class.cgats_fields.map { |f| set[f] }.compact
         if data.length > 0
-          color = klass.from_cgats(*data)
+          color = color_class.from_cgats(*data)
           if color.kind_of?(Color::Lab)
             @output = color
           else

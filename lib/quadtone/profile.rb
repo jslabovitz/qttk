@@ -36,14 +36,15 @@ module Quadtone
       @gray_gamma = 1
       params.each { |key, value| method("#{key}=").call(value) }
       raise "No printer specified" unless @printer
-      ppd_options = CupsPPD.new(@printer).options
+      @ppd = CupsPPD.new(@printer)
+      ppd_options = @ppd.options
       ImportantPrinterOptions.map { |o| ppd_options.find { |po| po[:keyword] == o } }.each do |option|
         @printer_options[option[:keyword]] ||= option[:default_choice]
       end
     end
     
     def to_yaml_properties
-      super - [:@characterization_curveset, :@linearization_curveset]
+      super - [:@characterization_curveset, :@linearization_curveset, :@ppd]
     end
     
     def read_curvesets!
@@ -117,8 +118,8 @@ module Quadtone
     def build_characterization_target
       curveset = CurveSet::QTR.new(@inks)
       curveset.generate_scale
-      target = Target.new
-      curveset.fill_target(target, :steps => 29, :oversample => 4)
+      target = Target.new(*target_size)
+      curveset.fill_target(target, :oversample => 4)
       target.write_image_file(characterization_reference_path.with_extname('.tif'))
       target.write_cgats_file(characterization_reference_path)
     end
@@ -126,10 +127,18 @@ module Quadtone
     def build_linearization_target
       curveset = CurveSet::Grayscale.new
       curveset.generate_scale
-      target = Target.new
+      target = Target.new(*target_size)
       curveset.fill_target(target, :steps => 21, :oversample => 4)
       target.write_image_file(linearization_reference_path.with_extname('.tif'))
       target.write_cgats_file(linearization_reference_path)
+    end
+    
+    def target_size
+      page_size = self.page_size
+      width = (page_size[:margin][:right] - page_size[:margin][:left]).pt
+      height = (page_size[:margin][:top] - page_size[:margin][:bottom]).pt
+      # make portrait if needed
+      width < height ? [height, width] : [width, height]
     end
     
     def qtr_profile(io)
@@ -190,12 +199,14 @@ module Quadtone
       printer.print_file(image_path, options)
     end
     
+    def page_size(name=nil)
+      name ||= @ppd.attribute('DefaultPageSize').first[:value]
+      @ppd.page_size(name)
+    end
+    
     def dump_printer_options
-      ppd = CupsPPD.new(@printer)
-      default_page_size = ppd.attribute('DefaultPageSize').first[:value]
-      puts "Page size (#{default_page_size}): #{ppd.page_size(default_page_size).inspect}"
       # puts "Attributes:"
-      # ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
+      # @ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
       #   puts "\t" + "%s%s: %s" % [
       #     attribute[:name],
       #     attribute[:spec].empty? ? '' : " (#{attribute[:spec]})",
@@ -203,7 +214,7 @@ module Quadtone
       #   ]
       # end
       puts "Options:"
-      ppd.options.sort_by { |o| o[:keyword] }.each do |option|
+      @ppd.options.sort_by { |o| o[:keyword] }.each do |option|
         puts "\t" + "%s: %s [%s]" % [
           option[:keyword],
           option[:default_choice],

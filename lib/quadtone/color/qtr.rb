@@ -2,7 +2,7 @@
 
 module Color
   
-  class QTR < Gray
+  class QTR < DeviceN
   
 =begin
 
@@ -30,14 +30,22 @@ module Color
       For background, use R=127 / G=255 / B=255
 =end
     
-    Channels = %w{LLK LK LM LC Y M C K}.map { |ch| sym = ch.to_sym; const_set(ch, sym); sym }
-  
-    attr_accessor :channel_num
-  
+    ComponentNames = %w{LLK LK LM LC Y M C K}.map { |ch| sym = ch.to_sym; const_set(ch, sym); sym }
+    
+    attr_accessor :channel
+    
+    def self.component_names
+      ComponentNames
+    end
+    
     def self.from_rgb(r, g, b)
-      channel = Channels.index(Channels.find { |c| r == 255 - (1 << Channels.index(c)) })
+      channel = ComponentNames.index(ComponentNames.find { |c| r == 255 - (1 << ComponentNames.index(c)) })
       value = (255 - g) / 255.0
       new(channel, value)
+    end
+    
+    def self.cgats_fields
+      %w{RGB_R RGB_G RGB_B}
     end
     
     def self.from_cgats(r, g, b)
@@ -45,29 +53,35 @@ module Color
     end
     
     def initialize(channel, value)
-      super(value)
-      @channel_num = case channel
+      @channel = case channel
       when String, Symbol
-        Channels.index(channel.to_s.upcase.to_sym) or raise "Unknown channel: #{channel.inspect}"
+        ComponentNames.index(channel.to_s.upcase.to_sym) or raise "Unknown channel: #{channel.inspect}"
       when Numeric
         channel
       else
         raise "Unknown channel type: #{channel.inspect}"
       end
+      components = [0] * self.class.num_components
+      components[@channel] = value
+      super(components)
     end
     
-    def channel
-      Channels[@channel_num]
+    def value
+      @components[@channel]
+    end
+    
+    def channel_name
+      ComponentNames[@channel]
     end
     
     def to_rgb
       [
-        255 - (1 << @channel_num),
-        (255 - (255 * @value)).to_i,
+        255 - (1 << @channel),
+        (255 - (255 * value)).to_i,
         255
       ]
     end
-        
+    
     def to_cgats
       to_rgb
     end
@@ -76,16 +90,8 @@ module Color
       '#' + (to_rgb.map { |n| "%02x" % n }.join)
     end
     
-    def hash
-      [@channel_num, @value].hash
-    end
-    
-    def eql?(other)
-      [@channel_num, @value] == [other.channel_num, other.value]
-    end
-  
     def inspect
-      "<%s: %.2f>" % [channel || @channel_num, @value * 100]
+      "<%s: %.2f>" % [@channel, value * 100]
     end
     
   end

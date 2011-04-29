@@ -75,20 +75,20 @@ module Quadtone
         end
         @color_class = samples.first.output.class
         @gsl_splines = {}
-        @color_class.components.each do |component|
+        @color_class.component_names.each_with_index do |component_name, component_index|
           inputs = GSL::Vector[samples.length]
           outputs = GSL::Vector[samples.length]
           samples.each_with_index do |sample, i|
             inputs[i]  = sample.input.value
-            outputs[i] = sample.output.method(component).call
+            outputs[i] = sample.output.components[component_index]
           end
-          @gsl_splines[component] = GSL::Spline.alloc(type, inputs, outputs)
+          @gsl_splines[component_name] = GSL::Spline.alloc(type, inputs, outputs)
         end
       end
       
       def [](input)
-        component_values = @color_class.components.map do |component|
-          @gsl_splines[component].eval(input.value)
+        component_values = @color_class.component_names.map do |component_name|
+          @gsl_splines[component_name].eval(input.value)
         end
         @color_class.new(*component_values)
       end

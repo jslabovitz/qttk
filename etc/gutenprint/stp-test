@@ -1,0 +1,326 @@
+#!/usr/bin/env ruby
+
+require 'ffi'
+
+module Gutenprint
+
+  module FFI
+    
+    extend ::FFI::Library
+  
+    ffi_lib('/usr/lib/libgutenprint.dylib')
+  
+    STP_CHANNEL_LIMIT = 32
+  
+    STP_IMAGE_STATUS_OK = 0
+    STP_IMAGE_STATUS_ABORT = 1
+  
+    class ImageS < ::FFI::Struct
+    
+    end
+  
+    attach_function :stp_init, [], :void
+  
+    ### printers.h
+  
+    attach_function :stp_printer_model_count, [], :int
+    attach_function :stp_get_printer_by_index, [:int], :pointer
+    attach_function :stp_get_printer, [:pointer], :string
+    attach_function :stp_printer_get_driver, [:pointer], :string
+    attach_function :stp_printer_get_long_name, [:pointer], :string
+    attach_function :stp_printer_get_device_id, [:pointer], :string
+    attach_function :stp_printer_get_family, [:pointer], :string
+    attach_function :stp_printer_get_manufacturer, [:pointer], :string
+    attach_function :stp_printer_get_defaults, [:pointer], :pointer
+    attach_function :stp_set_printer_defaults, [:pointer, :pointer], :void
+    attach_function :stp_set_printer_defaults_soft, [:pointer, :pointer], :void
+  
+    ###
+    ### vars.h
+    ###
+  
+    enum :stp_parameter_type, [
+      :string_list, 
+      :int,	
+      :boolean,	
+      :double,	
+      :curve,	
+      :file,	
+      :raw,	
+      :array,     
+      :dimension, 
+      :invalid    
+    ]
+  
+    enum :stp_parameter_class, [
+      :feature,	
+      :output,	
+      :core,	
+      :invalid   
+    ]
+
+    enum :stp_parameter_level, [
+      :basic,     
+      :advanced,  
+      :advanced1, 
+      :advanced2, 
+      :advanced3, 
+      :advanced4, 
+      :internal,	 
+      :external,	 
+      :invalid    
+    ]
+
+    enum :stp_parameter_activity, [
+      :inactive,  
+      :defaulted, 
+      :active     
+    ]
+
+    # basic printer settings
+    attach_function :stp_vars_create, [], :pointer
+    attach_function :stp_vars_copy, [:pointer, :pointer], :void
+    attach_function :stp_default_settings, [], :void
+    attach_function :stp_vars_create_copy, [:pointer], :pointer
+    attach_function :stp_vars_destroy, [:pointer], :void
+    attach_function :stp_set_driver, [:pointer, :string], :void
+    attach_function :stp_get_driver, [:pointer], :string
+    attach_function :stp_set_color_conversion, [:pointer, :string], :void
+    attach_function :stp_get_color_conversion, [:pointer], :string
+    attach_function :stp_set_left, [:pointer, :int], :void
+    attach_function :stp_get_left, [:pointer], :int
+    attach_function :stp_set_top, [:pointer, :int], :void
+    attach_function :stp_get_top, [:pointer], :int
+    attach_function :stp_set_width, [:pointer, :int], :void
+    attach_function :stp_get_width, [:pointer], :int
+    attach_function :stp_set_height, [:pointer, :int], :void
+    attach_function :stp_get_height, [:pointer], :int
+    attach_function :stp_set_page_width, [:pointer, :int], :void
+    attach_function :stp_get_page_width, [:pointer], :int
+    attach_function :stp_set_page_height, [:pointer, :int], :void
+    attach_function :stp_get_page_height, [:pointer], :int
+    attach_function :stp_set_outfunc, [:pointer, :pointer], :void
+    attach_function :stp_get_outfunc, [:pointer], :pointer
+    attach_function :stp_set_errfunc, [:pointer, :pointer], :void
+    attach_function :stp_get_errfunc, [:pointer], :pointer
+    attach_function :stp_set_outdata, [:pointer, :pointer], :void
+    attach_function :stp_get_outdata, [:pointer], :void
+    attach_function :stp_set_errdata, [:pointer, :pointer], :void
+    attach_function :stp_get_errdata, [:pointer], :void
+  
+    # parameter management
+    attach_function :stp_get_parameter_list, [:pointer], :pointer
+    attach_function :stp_parameter_list_count, [:pointer], :int
+    attach_function :stp_parameter_find, [:pointer, :string], :pointer
+    attach_function :stp_parameter_list_param, [:pointer, :int], :pointer
+    attach_function :stp_parameter_list_destroy, [:pointer], :void
+    attach_function :stp_parameter_list_create, [], :pointer
+    attach_function :stp_parameter_list_add_param, [:pointer, :pointer], :void
+    attach_function :stp_parameter_list_copy, [:pointer], :pointer
+    attach_function :stp_parameter_list_append, [:pointer, :pointer], :void
+    attach_function :stp_describe_parameter, [:pointer, :string, :pointer], :void
+    attach_function :stp_parameter_description_destroy, [:pointer], :void
+    attach_function :stp_parameter_find_in_settings, [:pointer, :string], :pointer
+    attach_function :stp_set_string_parameter, [:pointer, :string, :string], :void
+    attach_function :stp_set_string_parameter_n, [:pointer, :string, :string, :int], :void
+    attach_function :stp_set_file_parameter, [:pointer, :string, :string], :void
+    attach_function :stp_set_file_parameter_n, [:pointer, :string, :string, :int], :void
+    attach_function :stp_set_float_parameter, [:pointer, :string, :double], :void
+    attach_function :stp_set_int_parameter, [:pointer, :string, :int], :void
+    attach_function :stp_set_dimension_parameter, [:pointer, :string, :int], :void
+    attach_function :stp_set_boolean_parameter, [:pointer, :string, :int], :void
+    attach_function :stp_set_curve_parameter, [:pointer, :string, :pointer], :void
+    attach_function :stp_set_array_parameter, [:pointer, :string, :pointer], :void
+    attach_function :stp_set_raw_parameter, [:pointer, :string, :pointer, :int], :void
+    attach_function :stp_scale_float_parameter, [:pointer, :string, :double], :void
+    attach_function :stp_set_default_string_parameter, [:pointer, :string, :string], :void
+    attach_function :stp_set_default_string_parameter_n, [:pointer, :string, :string, :int], :void
+    attach_function :stp_set_default_file_parameter, [:pointer, :string, :string], :void
+    attach_function :stp_set_default_file_parameter_n, [:pointer, :string, :string, :int], :void
+    attach_function :stp_set_default_float_parameter, [:pointer, :string, :double], :void
+    attach_function :stp_set_default_int_parameter, [:pointer, :string, :int], :void
+    attach_function :stp_set_default_dimension_parameter, [:pointer, :string, :int], :void
+    attach_function :stp_set_default_boolean_parameter, [:pointer, :string, :int], :void
+    attach_function :stp_set_default_curve_parameter, [:pointer, :string, :pointer], :void
+    attach_function :stp_set_default_array_parameter, [:pointer, :string, :pointer], :void
+    attach_function :stp_set_default_raw_parameter, [:pointer, :string, :pointer, :int], :void
+    attach_function :stp_get_string_parameter, [:pointer, :string], :string
+    attach_function :stp_get_file_parameter, [:pointer, :string], :string
+    attach_function :stp_get_float_parameter, [:pointer, :string], :double
+    attach_function :stp_get_int_parameter, [:pointer, :string], :int
+    attach_function :stp_get_dimension_parameter, [:pointer, :string], :int
+    attach_function :stp_get_boolean_parameter, [:pointer, :string], :int
+    attach_function :stp_get_curve_parameter, [:pointer, :string], :pointer
+    attach_function :stp_get_array_parameter, [:pointer, :string], :pointer
+    attach_function :stp_get_raw_parameter, [:pointer, :string], :pointer
+    attach_function :stp_clear_string_parameter, [:pointer, :string], :void
+    attach_function :stp_clear_file_parameter, [:pointer, :string], :void
+    attach_function :stp_clear_float_parameter, [:pointer, :string], :void
+    attach_function :stp_clear_int_parameter, [:pointer, :string], :void
+    attach_function :stp_clear_dimension_parameter, [:pointer, :string], :void
+    attach_function :stp_clear_boolean_parameter, [:pointer, :string], :void
+    attach_function :stp_clear_curve_parameter, [:pointer, :string], :void
+    attach_function :stp_clear_array_parameter, [:pointer, :string], :void
+    attach_function :stp_clear_raw_parameter, [:pointer, :string], :void
+    attach_function :stp_clear_parameter, [:pointer, :string, :stp_parameter_type], :void
+    attach_function :stp_list_string_parameters, [:pointer], :pointer
+    attach_function :stp_list_file_parameters, [:pointer], :pointer
+    attach_function :stp_list_float_parameters, [:pointer], :pointer
+    attach_function :stp_list_int_parameters, [:pointer], :pointer
+    attach_function :stp_list_dimension_parameters, [:pointer], :pointer
+    attach_function :stp_list_boolean_parameters, [:pointer], :pointer
+    attach_function :stp_list_curve_parameters, [:pointer], :pointer
+    attach_function :stp_list_array_parameters, [:pointer], :pointer
+    attach_function :stp_list_raw_parameters, [:pointer], :pointer
+    attach_function :stp_list_parameters, [:pointer, :stp_parameter_type], :pointer
+    attach_function :stp_set_string_parameter_active, [:pointer, :string, :stp_parameter_activity], :void
+    attach_function :stp_set_file_parameter_active, [:pointer, :string, :stp_parameter_activity], :void
+    attach_function :stp_set_float_parameter_active, [:pointer, :string, :stp_parameter_activity], :void
+    attach_function :stp_set_int_parameter_active, [:pointer, :string, :stp_parameter_activity], :void
+    attach_function :stp_set_dimension_parameter_active, [:pointer, :string, :stp_parameter_activity], :void
+    attach_function :stp_set_boolean_parameter_active, [:pointer, :string, :stp_parameter_activity], :void
+    attach_function :stp_set_curve_parameter_active, [:pointer, :string, :stp_parameter_activity], :void
+    attach_function :stp_set_array_parameter_active, [:pointer, :string, :stp_parameter_activity], :void
+    attach_function :stp_set_raw_parameter_active, [:pointer, :string, :stp_parameter_activity], :void
+    attach_function :stp_set_parameter_active, [:pointer, :string, :stp_parameter_activity, :stp_parameter_type], :void
+    attach_function :stp_check_string_parameter, [:pointer, :string, :stp_parameter_activity], :int
+    attach_function :stp_check_file_parameter, [:pointer, :string, :stp_parameter_activity], :int
+    attach_function :stp_check_float_parameter, [:pointer, :string, :stp_parameter_activity], :int
+    attach_function :stp_check_int_parameter, [:pointer, :string, :stp_parameter_activity], :int
+    attach_function :stp_check_dimension_parameter, [:pointer, :string, :stp_parameter_activity], :int
+    attach_function :stp_check_boolean_parameter, [:pointer, :string, :stp_parameter_activity], :int
+    attach_function :stp_check_curve_parameter, [:pointer, :string, :stp_parameter_activity], :int
+    attach_function :stp_check_array_parameter, [:pointer, :string, :stp_parameter_activity], :int
+    attach_function :stp_check_raw_parameter, [:pointer, :string, :stp_parameter_activity], :int
+    attach_function :stp_check_parameter, [:pointer, :string, :stp_parameter_activity, :stp_parameter_type], :int
+    attach_function :stp_get_string_parameter_active, [:pointer, :string], :pointer
+    attach_function :stp_get_file_parameter_active, [:pointer, :string], :pointer
+    attach_function :stp_get_float_parameter_active, [:pointer, :string], :pointer
+    attach_function :stp_get_int_parameter_active, [:pointer, :string], :pointer
+    attach_function :stp_get_dimension_parameter_active, [:pointer, :string], :pointer
+    attach_function :stp_get_boolean_parameter_active, [:pointer, :string], :pointer
+    attach_function :stp_get_curve_parameter_active, [:pointer, :string], :pointer
+    attach_function :stp_get_array_parameter_active, [:pointer, :string], :pointer
+    attach_function :stp_get_raw_parameter_active, [:pointer, :string], :pointer
+    attach_function :stp_get_parameter_active, [:pointer, :string, :stp_parameter_type], :pointer
+  
+    # informational queries
+  
+    ###
+    ###
+    ###
+  
+  end
+  
+  FFI.stp_init
+  
+  class Printer
+    
+    def self.all_printers
+      FFI.stp_printer_model_count.times.map do |i|
+        new(FFI.stp_get_printer_by_index(i))
+      end
+    end
+
+    def initialize(stp_printer)
+      @stp_printer = stp_printer
+    end
+    
+    def driver
+      FFI.stp_printer_get_driver(@stp_printer)
+    end
+    
+    def long_name
+      FFI.stp_printer_get_long_name(@stp_printer)
+    end
+
+    def device_id
+      FFI.stp_printer_get_device_id(@stp_printer)
+    end
+
+    def family
+      FFI.stp_printer_get_family(@stp_printer)
+    end
+
+    def manufacturer
+      FFI.stp_printer_get_manufacturer(@stp_printer)
+    end
+    
+  end
+  
+  class Vars
+    
+    include FFI
+    
+    def initialize
+      @vars = stp_vars_create
+      stp_vars_copy(@vars, stp_default_settings)
+      @printer = stp_get_printer(@vars)
+      stp_set_printer_defaults(@vars, @printer)
+    end
+    
+  end
+  
+  class Image
+    
+    def initialize
+    end
+    
+    def init
+    end
+    
+    def reset
+    end
+    
+    def width
+    end
+    
+    def height
+    end
+    
+    def get_row(data, limit, row)
+    end
+
+    def get_appname
+    end
+    
+    def conclude
+    end
+    
+  end
+  
+end
+
+if $0 == __FILE__
+  
+  require 'pp'
+  
+  # puts "Valid printers are:"
+  # Gutenprint::Printer.all_printers.select { |p| p.driver =~ /^escp2-/ }.each do |printer|
+  #   puts "%-30s %s (device id = %s, family = %s, manufacturer = %s)" % [
+  #     printer.driver, 
+  #     printer.long_name.inspect,
+  #     printer.device_id.inspect,
+  #     printer.family.inspect,
+  #     printer.manufacturer.inspect
+  #   ]
+  # end
+  
+  Gutenprint::FFI.stp_init
+  vars = Gutenprint::FFI.stp_vars_create
+  defaults = Gutenprint::FFI.stp_default_settings 
+  Gutenprint::FFI.stp_vars_copy(vars, defaults) if defaults
+  printer = Gutenprint::FFI.stp_get_printer(vars)
+  Gutenprint::FFI.stp_set_printer_defaults(vars, printer)
+  
+  # vars = Gutenprint::Vars.new
+  # vars.driver = "escp2-r2400"
+  # vars.printer_defaults = vars.printer
+  # 
+  # param = vars.describe_parameter("RawChannelNames")
+  # channels = param.bounds or raise "No channels found"
+  # channels.each do |desc|
+  #   puts "\t%s (%s)" % [desc.text, desc.name]
+  # end
+
+end

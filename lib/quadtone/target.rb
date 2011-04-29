@@ -15,33 +15,49 @@ module Quadtone
   
   class Target
   
-    Fields = {
-      Color::QTR  => %w{RGB_R RGB_G RGB_B},
-      Color::Gray => %w{GRAY},
-      Color::Lab  => %w{LAB_L LAB_A LAB_B}
-    }
+    Colors = [
+      Color::QTR,
+      Color::DeviceN,
+      Color::Gray,
+      Color::Lab
+    ]
     
-    LabelFontSize     = 10
-    ColumnLabelWidth  = 20
-    RowLabelHeight    = 20
-    PatchSize         = 32
-    GapSize           = 4     # must be even
+    Magick::RVG.dpi = 72    # also adds #pt, #in, etc., methods to Numeric
+    
+    LabelFontSize     = 10.pt
+    ColumnLabelWidth  = 20.pt
+    RowLabelHeight    = 20.pt
+    PatchSize         = 32.pt
+    GapSize           = 4.pt     # must be even
     MaxColumns        = 21
     
     attr_accessor :background_color
     attr_accessor :foreground_color
-    attr_accessor :max_rows
+    attr_reader :image_width
+    attr_reader :image_height
   
     def self.from_cgats_file(cgats_file)
       target = new
       target.read_cgats_file!(cgats_file)
       target
     end
-  
-    def initialize(height_inches=8)
+    
+    def self.min_width
+      ColumnLabelWidth + (PatchSize + MaxColumns)
+    end
+    
+    def self.min_height
+      RowLabelHeight + PatchSize
+    end
+    
+    def initialize(image_width=nil, image_height=nil)
+      if image_width && image_height
+        raise "Page width must be at least #{self.class.min_width}" if image_width < self.class.min_width
+        raise "Page height must be at least #{self.class.min_height}" if image_height < self.class.min_height
+        @image_width, @image_height = image_width, image_height
+      end
       @background_color = Color::Gray.new(0)
       @foreground_color = Color::Gray.new(1)
-      @max_rows = ((height_inches * 72) / PatchSize).round - 1
       @table = [[]]
     end
     
@@ -49,19 +65,12 @@ module Quadtone
       MaxColumns
     end
     
-    def max_samples
-      MaxColumns * @max_rows
+    def max_rows
+      ((image_height - RowLabelHeight) / PatchSize).floor
     end
-  
-    def <<(samples)
-      [samples].flatten.each do |sample|
-        raise "Too many samples (would exceed #{max_samples})" if samples.length + 1 == max_samples
-        cur_row = @table[-1]
-        if cur_row.length == MaxColumns
-          @table << (cur_row = [])
-        end
-        cur_row << sample
-      end
+    
+    def max_samples
+      max_columns * max_rows      
     end
     
     def num_rows
@@ -72,6 +81,17 @@ module Quadtone
       @table.map(&:length).max
     end
   
+    def <<(samples)
+      [samples].flatten.each do |sample|
+        cur_row = @table[-1]
+        if cur_row.length == max_columns
+          raise "Not enough rows to add more samples" if num_rows == max_rows
+          @table << (cur_row = [])
+        end
+        cur_row << sample
+      end
+    end
+    
     def samples
       @table.flatten.compact
     end
@@ -97,10 +117,10 @@ module Quadtone
       cgats.data_fields = %w{SampleID SAMPLE_NAME}
       samples = @table.flatten
       if (sample = samples.find { |s| s.input })
-        cgats.data_fields += Fields[sample.input.class]
+        cgats.data_fields += sample.input.class.cgats_fields
       end
       if (sample = samples.find { |s| s.output })
-        cgats.data_fields += Fields[sample.output.class]
+        cgats.data_fields += sample.output.class.cgats_fields
       end
       sample_id = 1
       # output by columns, not rows!
@@ -118,24 +138,40 @@ module Quadtone
     end
     
     def write_image_file(image_file)
-      image.write(image_file) do
+      ;;warn "[generating target image]"
+      img = image
+      ;;warn "[writing target image]"
+      img.write(image_file) do
+        #FIXME: This should be 16 for non-QTR use, but how to set outside of this scope?
         self.depth = 8
         self.compression = Magick::ZipCompression
       end
+      ;;warn "[done writing image]"
     end
     
-    def image(size={:width=>(11*72)-(9*2),:height=>(8.5*72)-(9*2)})
-      Magick::RVG.dpi = 72
-      rvg = Magick::RVG.new(size[:width], size[:height]) do |canvas|
-        canvas.background_fill = @background_color.html
-        canvas.g.translate(ColumnLabelWidth, RowLabelHeight) do |patches|
-          draw_patches(patches)
-          draw_gaps(patches)
+    def image
+      image_list = Magick::ImageList.new
+      flatten = (color_mode != Color::DeviceN)
+      color_mode.component_names.length.times do |component_index|
+        first = (component_index == 0)
+        rvg = Magick::RVG.new(@image_width, @image_height) do |canvas|
+          canvas.background_fill = @background_color.html if first || !flatten
+          canvas.g.translate(ColumnLabelWidth, RowLabelHeight) do |g|
+            draw_patches(g, component_index)
+            draw_gaps(g) if first
+          end
+          if first
+            canvas.g.translate(0, RowLabelHeight) { |g| draw_row_labels(g) }
+            canvas.g.translate(ColumnLabelWidth, 0) { |g| draw_column_labels(g) }
+          end
         end
-        canvas.g.translate(0, RowLabelHeight) { |g| draw_row_labels(g) }
-        canvas.g.translate(ColumnLabelWidth, 0) { |g| draw_column_labels(g) }
+        image_list << rvg.draw
       end
-      rvg.draw
+      if flatten
+        image_list.flatten_images
+      else
+        image_list
+      end
     end
     
     private
@@ -156,12 +192,18 @@ module Quadtone
       end
     end
     
-    def draw_patches(g)
+    def draw_patches(g, component_index=nil)
       @table.each_with_index do |columns, row|
         columns.each_with_index do |sample, col|
-          w, h = PatchSize, PatchSize
-          x, y = (col + 1) * PatchSize, row * PatchSize
-          g.rect(w, h, x, y).styles(:fill => sample.input.html)
+          if component_index.nil? || sample.input.components[component_index] > 0
+            w, h = PatchSize, PatchSize
+            x, y = (col + 1) * PatchSize, row * PatchSize
+            if true   # adjust for gaps
+              x += GapSize
+              w -= GapSize
+            end
+            g.rect(w, h, x, y).styles(:fill => sample.input.html)
+          end
   	    end
       end
     end
@@ -170,7 +212,7 @@ module Quadtone
       (num_columns + 1).times do |col|
         w, h = (GapSize / 2) - 1, (num_rows * PatchSize)
         x, y = (col + 1) * PatchSize, 0
-        g.rect(w, h, x, y).styles(:fill => @background_color.html)
+        g.rect(w, h, x, y).styles(:fill => @background_color.html) if @background_color
         g.rect(w, h, x + (GapSize / 2), y).styles(:fill => @foreground_color.html)
       end
     end
