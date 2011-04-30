@@ -25,6 +25,8 @@
   - Write tests to verify operations.
   - Scale gray values in profile by ink limits?
     http://lists.apple.com/archives/colorsync-users/2007/Jan/msg00379.html
+    http://www.colorforums.com/viewtopic.php?t=80
+    http://www.onyxtalk.com/thread-understanding-ink-limits
 
 - Remove hardcoded/assumptions (eg, inks, paper sizes).
 
@@ -74,6 +76,9 @@
 
 - Create smoother curves (using bsplines?).
 
+- Calculate dot gain.
+  - http://www.brucelindbloom.com/index.html?Eqn_DotGain.html
+  
 - Display densities using log scale?
 
 - Test/rewrite 'add-printer':
