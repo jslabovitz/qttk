@@ -1,8 +1,5 @@
 # TODO
 
-- Make 'init' tool only create profile.
-  - Add new 'target' tool to generate target reference files & images.
-
 - Add initial ink-limit to profile/target.
   - To allow for more accurate results on papers known to be very absorbent.
   
@@ -13,8 +10,6 @@
   
 - Submit 'cupsffi' changes to maintainer.
   - Remove hard-coded 'require' of 'cupsffi'.
-
-- Include test reference image in gem distribution, rather than using something in ~/Downloads.
 
 - Detect & remove bad ink:
   - Too much deviation in samples.
@@ -27,8 +22,6 @@
     http://lists.apple.com/archives/colorsync-users/2007/Jan/msg00379.html
     http://www.colorforums.com/viewtopic.php?t=80
     http://www.onyxtalk.com/thread-understanding-ink-limits
-
-- Remove hardcoded/assumptions (eg, inks, paper sizes).
 
 - Experiment with whether more steps or over-sampling is better.
 

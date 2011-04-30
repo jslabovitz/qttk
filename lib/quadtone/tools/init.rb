@@ -38,7 +38,6 @@ module Quadtone
         :inks => @inks,
       )
       profile.save!
-      profile.build_targets
     end
   
   end

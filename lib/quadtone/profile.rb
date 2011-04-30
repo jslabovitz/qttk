@@ -22,7 +22,7 @@ module Quadtone
     
     def self.from_dir(base_dir=Pathname.new('.'))
       profile = YAML::load((base_dir + "#{ProfileName}.yaml").open.read)
-      profile.read_curvesets!
+      profile.setup
       profile
     end
     
@@ -35,12 +35,17 @@ module Quadtone
       @gray_overlap = 10
       @gray_gamma = 1
       params.each { |key, value| method("#{key}=").call(value) }
+      setup
+    end
+    
+    def setup
       raise "No printer specified" unless @printer
       @ppd = CupsPPD.new(@printer)
       ppd_options = @ppd.options
       ImportantPrinterOptions.map { |o| ppd_options.find { |po| po[:keyword] == o } }.each do |option|
         @printer_options[option[:keyword]] ||= option[:default_choice]
       end
+      read_curvesets!
     end
     
     def to_yaml_properties
@@ -54,34 +59,24 @@ module Quadtone
     
     def read_characterization_curveset!
       if characterization_measured_path.exist?
-          if profile_path.exist? && characterization_measured_path.mtime > profile_path.mtime
+        if characterization_measured_path.mtime > profile_path.mtime
           @characterization_curveset = CurveSet::QTR.from_samples(Target.from_cgats_file(characterization_measured_path).samples)
         else
-          warn "Ignoring characterization file #{characterization_measured_path} that is not newer than profile."
+          warn "Ignoring out of date characterization file."
         end
       end
     end
     
     def read_linearization_curveset!
       if linearization_measured_path.exist?
-        if characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime
+        if characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime && linearization_measured_path.mtime > profile_path.mtime
           @linearization_curveset = CurveSet::Grayscale.from_samples(Target.from_cgats_file(linearization_measured_path).samples)
         else
-          warn "Ignoring linearization file #{linearization_measured_path} that is not newer than characterization file #{characterization_measured_path}."
+          warn "Ignoring out of date linearization file."
         end
       end
     end
-    
-    def characterization_curveset
-      read_characterization_curveset! unless @characterization_curveset
-      @characterization_curveset
-    end
-    
-    def linearization_curveset
-      read_linearization_curveset! unless @linearization_curveset
-      @linearization_curveset
-    end
-        
+            
     def save!
       profile_path.open('w') { |fh| YAML::dump(self, fh) }
     end

@@ -12,5 +12,6 @@ Quadtone::Tool.process_args(ARGV,
   'print'         => Quadtone::PrintTool,
   'profile'       => Quadtone::ProfileTool,
   'separate'      => Quadtone::SeparateTool,
+  'target'        => Quadtone::TargetTool,
   'test'          => Quadtone::TestTool,
 )
