@@ -128,8 +128,6 @@ module Quadtone
           # draw individual samples
           curve.samples.each do |sample|
             xml.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2, :stroke => 'none', :fill => "rgb(#{sample.output.to_rgb.join(',')})")
-            #FIXME: If Lab color, somehow draw a/b values
-            #FIXME: Parameterize error threshold
             if sample.error && sample.error > 0.05
               xml.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2 + (sample.error * 10), :stroke => 'red', :fill => 'none')
             end
