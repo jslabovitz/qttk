@@ -2,7 +2,6 @@ module Quadtone
   
   class Profile
     
-    attr_accessor :base_dir
     attr_accessor :name
     attr_accessor :printer
     attr_accessor :printer_options
@@ -14,20 +13,23 @@ module Quadtone
     attr_accessor :gray_shadow
     attr_accessor :gray_overlap
     attr_accessor :gray_gamma
+    attr_accessor :mtime
     
     ProfileName = 'profile'
     CharacterizationName = 'characterization'
     LinearizationName = 'linearization'
     ImportantPrinterOptions = %w{MediaType Resolution ripSpeed stpDither}
     
-    def self.from_dir(base_dir=Pathname.new('.'))
-      profile = YAML::load((base_dir + "#{ProfileName}.yaml").open.read)
+    def self.from_dir(dir='.')
+      file = Pathname.new(dir) + "#{ProfileName}.yaml"
+      profile = YAML::load(file.open.read)
+      profile.mtime = file.mtime
       profile.setup
       profile
     end
     
     def initialize(params={})
-      @base_dir = Pathname.new('.')
+      @mtime = Time.now
       @printer_options = {}
       @default_ink_limit = 1
       @gray_highlight = 6
@@ -59,7 +61,7 @@ module Quadtone
     
     def read_characterization_curveset!
       if characterization_measured_path.exist?
-        if characterization_measured_path.mtime > profile_path.mtime
+        if characterization_measured_path.mtime > @mtime
           @characterization_curveset = CurveSet::QTR.from_samples(Target.from_cgats_file(characterization_measured_path).samples)
         else
           warn "Ignoring out of date characterization file."
@@ -69,7 +71,7 @@ module Quadtone
     
     def read_linearization_curveset!
       if linearization_measured_path.exist?
-        if characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime && linearization_measured_path.mtime > profile_path.mtime
+        if characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime && linearization_measured_path.mtime > @mtime
           @linearization_curveset = CurveSet::Grayscale.from_samples(Target.from_cgats_file(linearization_measured_path).samples)
         else
           warn "Ignoring out of date linearization file."
@@ -82,27 +84,27 @@ module Quadtone
     end
     
     def profile_path
-      base_dir + "#{ProfileName}.yaml"
+      Pathname.new("#{ProfileName}.yaml")
     end
     
     def characterization_reference_path
-      @base_dir + "#{CharacterizationName}.reference.txt"
+      Pathname.new("#{CharacterizationName}.reference.txt")
     end
     
     def characterization_measured_path
-      @base_dir + "#{CharacterizationName}.measured.txt"
+      Pathname.new("#{CharacterizationName}.measured.txt")
     end
     
     def linearization_reference_path
-      @base_dir + "#{LinearizationName}.reference.txt"
+      Pathname.new("#{LinearizationName}.reference.txt")
     end
     
     def linearization_measured_path
-      @base_dir + "#{LinearizationName}.measured.txt"
+      Pathname.new("#{LinearizationName}.measured.txt")
     end
     
     def qtr_profile_path
-      @base_dir + (@name + '.txt')
+      Pathname.new(@name + '.txt')
     end
     
     def build_targets
