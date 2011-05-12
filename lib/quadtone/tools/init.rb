@@ -29,12 +29,12 @@ module Quadtone
     end
   
     def run(name)
+      printer_options = {}
+      printer_options.merge!('Resolution' => @resolution) if @resolution
       profile = Profile.new(
         :name => name,
         :printer => @printer,
-        :printer_options => {
-          'Resolution' => @resolution,
-        },
+        :printer_options => printer_options,
         :inks => @inks,
       )
       profile.save!
