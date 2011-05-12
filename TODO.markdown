@@ -7,7 +7,8 @@
   - Allow negation of inks (eg, '-LLK').
 
 - Improve target generation:
-  - Separate generation of target reference file from target image.  Image file should just be generated from reference file.
+  - Separate generation of target reference file from target image.
+    - Image file should just be generated from reference file.
   - Let test targets cross multiple pages.
   - Add info banner to target:
     - Mode (characterization, linearization, etc.)
@@ -81,6 +82,11 @@
 - Document classes & methods.
 
 - Figure out why ColorPort fails to read our reference target file.
+
+- Generate Argyll-compatible CGATS files:
+    targen -d 0 -f 21 foo
+    printtarg -i i1 foo
+    chartread -n -l -N -B -S foo
 
 - Bypass QTR entirely
   - Use Gutenprint to generate ESC/P2 files.
