@@ -44,8 +44,13 @@ module Quadtone
       raise "No printer specified" unless @printer
       @ppd = CupsPPD.new(@printer)
       ppd_options = @ppd.options
-      ImportantPrinterOptions.map { |o| ppd_options.find { |po| po[:keyword] == o } }.each do |option|
-        @printer_options[option[:keyword]] ||= option[:default_choice]
+      ImportantPrinterOptions.each do |option_name|
+        option = ppd_options.find { |o| o[:keyword] == option_name }
+        if option
+          @printer_options[option[:keyword]] ||= option[:default_choice]
+        else
+          warn "Printer does not support option: #{option_name.inspect}"
+        end
       end
       read_curvesets!
     end
