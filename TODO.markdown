@@ -8,11 +8,12 @@
 
 - Improve target generation:
   - Separate generation of target reference file from target image.  Image file should just be generated from reference file.
-  - Let test targets cross multiple pages:
+  - Let test targets cross multiple pages.
   - Add info banner to target:
     - Mode (characterization, linearization, etc.)
     - Date
     - Profile info (printer, paper, inks)
+    - Page (n/m).
 
 - Improve analysis:
   - Retain individual output samples from measured target
