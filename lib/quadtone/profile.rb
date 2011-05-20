@@ -42,7 +42,7 @@ module Quadtone
     
     def setup
       raise "No printer specified" unless @printer
-      @ppd = CupsPPD.new(@printer)
+      @ppd = CupsPPD.new(@printer.dup)
       ppd_options = @ppd.options
       ImportantPrinterOptions.each do |option_name|
         option = ppd_options.find { |o| o[:keyword] == option_name }
@@ -193,7 +193,7 @@ module Quadtone
     end
     
     def print_image(image_path, options={})
-      printer = CupsPrinter.new(@printer)
+      printer = CupsPrinter.new(@printer.dup)
       if options['ColorModel'] != 'QTCAL'
         options['ripCurve1'] = @name
       end
