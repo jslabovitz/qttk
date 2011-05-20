@@ -196,12 +196,8 @@ module Quadtone
       @table.each_with_index do |columns, row|
         columns.each_with_index do |sample, col|
           if component_index.nil? || sample.input.components[component_index] > 0
-            w, h = PatchSize, PatchSize
-            x, y = (col + 1) * PatchSize, row * PatchSize
-            if true   # adjust for gaps
-              x += GapSize
-              w -= GapSize
-            end
+            w, h = PatchSize - GapSize, PatchSize - 1
+            x, y = ((col + 1) * PatchSize) + GapSize, row * PatchSize
             g.rect(w, h, x, y).styles(:fill => sample.input.html)
           end
   	    end
@@ -209,12 +205,19 @@ module Quadtone
     end
     
     def draw_gaps(g)
-      (num_columns + 1).times do |col|
-        w, h = (GapSize / 2) - 1, (num_rows * PatchSize)
-        x, y = (col + 1) * PatchSize, 0
-        g.rect(w, h, x, y).styles(:fill => @background_color.html) if @background_color
-        g.rect(w, h, x + (GapSize / 2), y).styles(:fill => @foreground_color.html)
+      @table.each_with_index do |columns, row|
+        0.upto(columns.length).each do |col|
+          prev_sample = col > 0 ? columns[col - 1] : nil
+          sample = columns[col]
+          value = sample ? sample.input.value : 0
+          prev_value = prev_sample ? prev_sample.input.value : 0
+          x, y = ((col + 1) * PatchSize) + 1, row * PatchSize
+          w, h = GapSize - 2, PatchSize - 1
+          color = (prev_value < 0.5 && value < 0.5) ? @foreground_color : @background_color
+          g.rect(w, h, x, y).styles(:fill => color.html) if color
+        end
       end
+
     end
     
   end
