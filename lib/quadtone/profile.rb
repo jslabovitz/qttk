@@ -121,7 +121,7 @@ module Quadtone
       curveset = CurveSet::QTR.new(@inks)
       curveset.generate_scale
       target = Target.new(*target_size)
-      curveset.fill_target(target, :oversample => 4)
+      curveset.fill_target(target, :steps => 21, :oversample => 4)
       target.write_image_file(characterization_reference_path.with_extname('.tif'))
       target.write_cgats_file(characterization_reference_path)
     end
