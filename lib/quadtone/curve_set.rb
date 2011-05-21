@@ -53,9 +53,13 @@ module Quadtone
       values.each do |channel, inputs|
         values[channel] = inputs.sort.map do |input, outputs|
           sample = Sample.new(input, *outputs.first.class.average(outputs))
-          ;;warn "#{input.inspect}: sample error out of range: #{sample.error}" if sample.error && sample.error >= 1
-          sample
-        end
+          if sample.error && sample.error >= 1
+            warn "skipping sample with error out of range: input=#{input.inspect}, error=#{sample.error}" 
+            nil
+          else
+            sample
+          end
+        end.compact
       end
       # find paper value
       paper_shades = values.delete(:P) or raise "No paper sample found!"
@@ -198,6 +202,15 @@ module Quadtone
         scale_samples = curve.interpolated_samples(steps).map do |sample|
           Sample.new(self.class.color_for_channel_value(curve.key, sample.input.value), nil)
         end
+        # shuffle scale samples so they are alternating light/dark
+        mid = (scale_samples.length / 2) + 1
+        light_scale = scale_samples[0 ... mid]
+        dark_scale  = scale_samples[mid .. -1]
+        new_scale = []
+        until light_scale.empty? && dark_scale.empty?
+          new_scale += [light_scale.shift, dark_scale.shift]
+        end
+        scale_samples = new_scale.compact
         # add multiple instances of each sample for each channel
         samples += scale_samples * oversample
       end
@@ -207,7 +220,11 @@ module Quadtone
       end
       ;;warn "generated #{samples.length} samples covering channels: #{@channels.join(' ')} using #{steps} steps @ #{oversample}x oversampling (plus #{remaining} paper samples)"
       # add samples randomly, starting with known seed so we get equivalent randomization
-      target << samples.randomize(1)
+      if options[:randomize]
+        target << samples.randomize(1)
+      else
+        target << samples
+      end
       target
     end
   
