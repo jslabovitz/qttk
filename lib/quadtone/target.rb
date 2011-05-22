@@ -179,8 +179,10 @@ module Quadtone
     def draw_row_labels(g)
       num_rows.times do |row|
         label = (row + 1).to_s
-        x, y = 0, (row * PatchSize) + (PatchSize / 2)
-        g.text(x, y, label).styles(:font_size => LabelFontSize, :fill => @foreground_color.html)
+        y = row * PatchSize
+        g.text(0, y + (PatchSize / 2), label).styles(:font_size => LabelFontSize, :fill => @foreground_color.html)
+        y += PatchSize
+        g.line(0, y, ColumnLabelWidth + ((MaxColumns + 2) * PatchSize), y).styles(:stroke => @foreground_color.html)
       end
     end
 
