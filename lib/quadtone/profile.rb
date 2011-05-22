@@ -112,25 +112,27 @@ module Quadtone
       Pathname.new(@name + '.txt')
     end
     
-    def build_targets
-      build_characterization_target
-      build_linearization_target
+    def build_targets(options={})
+      build_characterization_target(options)
+      build_linearization_target(options)
     end
     
-    def build_characterization_target
+    def build_characterization_target(options={})
+      default_options = { :steps => 21, :oversample => 4 }
       curveset = CurveSet::QTR.new(@inks)
       curveset.generate_scale
       target = Target.new(*target_size)
-      curveset.fill_target(target, :steps => 21, :oversample => 4)
+      curveset.fill_target(target, default_options.merge(options))
       target.write_image_file(characterization_reference_path.with_extname('.tif'))
       target.write_cgats_file(characterization_reference_path)
     end
     
-    def build_linearization_target
+    def build_linearization_target(options={})
+      default_options = { :steps => 21, :oversample => 4 }
       curveset = CurveSet::Grayscale.new
       curveset.generate_scale
       target = Target.new(*target_size)
-      curveset.fill_target(target, :steps => 21, :oversample => 4)
+      curveset.fill_target(target, default_options.merge(options))
       target.write_image_file(linearization_reference_path.with_extname('.tif'))
       target.write_cgats_file(linearization_reference_path)
     end
