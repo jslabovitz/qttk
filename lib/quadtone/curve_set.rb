@@ -53,13 +53,9 @@ module Quadtone
       values.each do |channel, inputs|
         values[channel] = inputs.sort.map do |input, outputs|
           sample = Sample.new(input, *outputs.first.class.average(outputs))
-          if sample.error && sample.error >= 1
-            warn "skipping sample with error out of range: input=#{input.inspect}, error=#{sample.error}" 
-            nil
-          else
-            sample
-          end
-        end.compact
+          warn "sample error out of range: input=#{input.inspect}, error=#{sample.error}" if sample.error && sample.error >= 1
+          sample
+        end
       end
       # find paper value
       paper_shades = values.delete(:P) or raise "No paper sample found!"
