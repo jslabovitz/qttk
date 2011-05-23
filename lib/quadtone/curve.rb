@@ -44,7 +44,7 @@ module Quadtone
     def find_ink_limits!
       samples = interpolated_samples(100)
       @density_limit = samples.sort_by { |p| p.output.value }.last
-      @chroma_limit = samples.sort_by { |p| p.output.chroma }.first
+      # @chroma_limit = samples.sort_by { |p| p.output.chroma }.first
       @delta_e_limit = nil
       (0 .. samples.length - 2).each do |i|
         sample, next_sample = samples[i], samples[i + 1]
@@ -58,7 +58,7 @@ module Quadtone
     
     def ink_limit
       # find minimum of chroma, density, delta_e
-      [@chroma_limit, @density_limit, @delta_e_limit].sort_by { |pt| pt.input.value }.first
+      [@chroma_limit, @density_limit, @delta_e_limit].compact.sort_by { |pt| pt.input.value }.first
     end
         
     class Spline
