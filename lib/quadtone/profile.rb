@@ -196,9 +196,7 @@ module Quadtone
     
     def print_image(image_path, options={})
       printer = CupsPrinter.new(@printer.dup)
-      if options['ColorModel'] != 'QTCAL'
-        options['ripCurve1'] = @name
-      end
+      options['ripCurve1'] = @name if options['ColorModel'] != 'QTCAL'
       options.merge!(@printer_options)
       printer.print_file(image_path, options)
     end
@@ -209,14 +207,14 @@ module Quadtone
     end
     
     def dump_printer_options
-      # puts "Attributes:"
-      # @ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
-      #   puts "\t" + "%s%s: %s" % [
-      #     attribute[:name],
-      #     attribute[:spec].empty? ? '' : " (#{attribute[:spec]})",
-      #     attribute[:value]
-      #   ]
-      # end
+      puts "Attributes:"
+      @ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
+        puts "\t" + "%s%s: %s" % [
+          attribute[:name],
+          attribute[:spec].empty? ? '' : " (#{attribute[:spec]})",
+          attribute[:value]
+        ]
+      end
       puts "Options:"
       @ppd.options.sort_by { |o| o[:keyword] }.each do |option|
         puts "\t" + "%s: %s [%s]" % [
