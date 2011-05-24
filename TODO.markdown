@@ -1,16 +1,5 @@
 # TODO
 
-- Improve printing:
-  - Apply gamma.
-      file:///Users/johnl/.rvm/gems/ruby-1.9.2-p180/gems/rmagick-2.13.1/doc/image2.html#gamma_correct
-  - Scale image to specified size.
-      file:///Users/johnl/.rvm/gems/ruby-1.9.2-p180/gems/rmagick-2.13.1/doc/image1.html#change_geometry
-      file:///Users/johnl/.rvm/gems/ruby-1.9.2-p180/gems/rmagick-2.13.1/doc/image3.html#resize
-  - Rotate if necessary to best fit landscape/portrait.
-      file:///Users/johnl/.rvm/gems/ruby-1.9.2-p180/gems/rmagick-2.13.1/doc/image3.html#rotate
-  - Center within page bounds.
-      file:///Users/johnl/.rvm/gems/ruby-1.9.2-p180/gems/rmagick-2.13.1/doc/image1.html#border
-
 - Improve profile initialization:
   - Use CupsFFI instead of 'lpadmin' to determine default printer.
   - Add initial ink-limit to profile/target.
