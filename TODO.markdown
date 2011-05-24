@@ -24,7 +24,6 @@
   - Determine optimum delta-E for ink detection (& make configurable).
   - Detect & remove bad ink:
     - Too much deviation in samples.
-    - Ink limit too low.
   - Calculate dot gain.
     - http://www.brucelindbloom.com/index.html?Eqn_DotGain.html
   - Verify limiting/separation algorithms.
@@ -56,8 +55,7 @@
   - If multiple test results exist:
     - Graph change of lineazation, dMax, color, etc.
 
-- Submit 'cupsffi' changes to maintainer.
-  - Remove hard-coded 'require' of 'cupsffi'.
+- Remove hard-coded 'require' of 'cupsffi'.
 
 - Build web interface.
   - Create account.

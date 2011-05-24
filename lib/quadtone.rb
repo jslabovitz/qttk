@@ -8,8 +8,6 @@ require 'gsl'
 require 'pathname3'
 require 'rvg/rvg'   # includes 'rmagick'
 require 'builder'   # for SVG generation
-
-$LOAD_PATH.unshift Pathname.new(ENV['HOME']) + 'src/cupsffi/lib'
 require 'cupsffi'
 
 # ours
