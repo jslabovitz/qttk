@@ -64,8 +64,13 @@ module Quadtone
       @curves = values.map do |channel, samples|
         curve = Curve.new(channel, [@paper] + samples)
         curve.find_ink_limits!
-        curve
-      end
+        if curve.ink_limit.input.value == 0
+          ;;warn "Ignoring ink #{channel} because ink limit is zero"
+          nil
+        else
+          curve
+        end
+      end.compact
       @curves.sort_by! { |c| @channels.index(c.key) }
       ;;warn "read #{samples.length} samples covering channels: #{@curves.map { |c| c.key }.join(' ')}"
     end
@@ -93,7 +98,7 @@ module Quadtone
           line = lines.shift
           line =~ /^(\d+)$/ or raise "Unexpected value: #{line.inspect}"
           output = $1.to_i
-  		    Sample.new(input / 255.0, output / 65535.0)
+          Sample.new(Color::Gray.new(input / 255.0), Color::Gray.new(output / 65535.0))
   			end
         # curve = nil if curve.empty? || curve.uniq == [0]
   		  Curve.new(channel, samples)

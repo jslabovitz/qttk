@@ -112,6 +112,10 @@ module Quadtone
       Pathname.new(@name + '.txt')
     end
     
+    def quad_file_path
+      Pathname.new('/Library/Printers/QTR/quadtone') + @printer + "#{@name}.quad"
+    end
+    
     def build_targets(options={})
       build_characterization_target(options)
       build_linearization_target(options)
@@ -137,12 +141,12 @@ module Quadtone
       target.write_cgats_file(linearization_reference_path)
     end
     
-    def target_size
-      page_size = self.page_size
-      width = (page_size[:margin][:right] - page_size[:margin][:left]).pt
-      height = (page_size[:margin][:top] - page_size[:margin][:bottom]).pt
+    def target_size(name=nil)
+      page_size = self.page_size(name)
+      target_size = page_size[:imageable_width], page_size[:imageable_height]
       # make portrait if needed
-      width < height ? [height, width] : [width, height]
+      target_size.reverse! if target_size.first < target_size.last
+      target_size
     end
     
     def qtr_profile(io)
@@ -203,7 +207,10 @@ module Quadtone
     
     def page_size(name=nil)
       name ||= @ppd.attribute('DefaultPageSize').first[:value]
-      @ppd.page_size(name)
+      size = @ppd.page_size(name)
+      size[:imageable_width] = (size[:margin][:right] - size[:margin][:left]).pt
+      size[:imageable_height] = (size[:margin][:top] - size[:margin][:bottom]).pt
+      size
     end
     
     def dump_printer_options

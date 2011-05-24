@@ -33,7 +33,7 @@ module Quadtone
       options = @options.dup
       options['ColorModel'] = @calibrate ? 'QTCAL' : 'QTRIP16'
       profile.dump_printer_options if @show_options
-      image_files.each { |p| Pathname.new(p) }.each do |image_path|
+      image_files.map { |p| Pathname.new(p) }.each do |image_path|
         profile.print_image(image_path, options)
       end
     end

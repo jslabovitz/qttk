@@ -17,10 +17,7 @@ module Quadtone
       end
     end
     
-    def run(quad_file, image_file=nil)
-      quad_file = Pathname.new(quad_file)
-      
-      quad = CurveSet::QuadFile.from_quad_file(quad_file)
+    def run(image_file=nil)
       
       if @gradient
         image_file = Pathname.new('gradient.tif')
@@ -31,9 +28,8 @@ module Quadtone
         image = Magick::Image.read(image_file).first
       end
 
-      quad_name = quad_file.basename.sub(/#{Regexp.quote(quad_file.extname)}/, '')
-      separated_image_file = image_file.basename.sub(/#{Regexp.quote(image_file.extname)}/, "--#{quad_name}.tif")
-
+      profile = Profile.from_dir(@profile_dir)
+      quad = CurveSet::QuadFile.from_quad_file(profile.quad_file_path)
       separator = Separator.new(quad)
       separated_image = separator.separate(image)
       if montage
@@ -41,6 +37,8 @@ module Quadtone
           self.frame = '2x2'
         end
       end
+
+      separated_image_file = image_file.with_extname(".#{profile.name}.tif")
       ;;warn "writing #{separated_image_file}"
       separated_image.write(separated_image_file) { self.compression = Magick::ZipCompression }
     end
