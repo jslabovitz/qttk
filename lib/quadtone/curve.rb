@@ -60,7 +60,11 @@ module Quadtone
       # find minimum of chroma, density, delta_e
       [@chroma_limit, @density_limit, @delta_e_limit].compact.sort_by { |pt| pt.input.value }.first
     end
-        
+    
+    def dynamic_range
+      interpolated_samples(2).map { |s| Math::log10(100.0 / s.output.l) }
+    end
+    
     class Spline
       
       def initialize(samples)
