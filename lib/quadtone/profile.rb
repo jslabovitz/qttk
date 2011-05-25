@@ -68,6 +68,7 @@ module Quadtone
       if characterization_measured_path.exist?
         if characterization_measured_path.mtime > @mtime
           @characterization_curveset = CurveSet::QTR.from_samples(Target.from_cgats_file(characterization_measured_path).samples)
+          @characterization_curveset.print_statistics
         else
           warn "Ignoring out of date characterization file."
         end
@@ -78,6 +79,7 @@ module Quadtone
       if linearization_measured_path.exist?
         if characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime && linearization_measured_path.mtime > @mtime
           @linearization_curveset = CurveSet::Grayscale.from_samples(Target.from_cgats_file(linearization_measured_path).samples)
+          @linearization_curveset.print_statistics
         else
           warn "Ignoring out of date linearization file."
         end

@@ -228,6 +228,20 @@ module Quadtone
       end
       target
     end
+    
+    def print_statistics
+      puts "Curve set:"
+      @curves.each do |curve|
+        dmin, dmax = curve.dynamic_range
+        puts "\t" + "%3s: ink limits: chroma = %3s%%, density = %3s%%, deltaE = %3s%%; density: dMin = %.2f, dMax = %.2f, range = %.2f" % [
+          curve.key,
+          curve.chroma_limit ? ( curve.chroma_limit.input.value * 100).to_i : '---',
+          curve.density_limit ? (curve.density_limit.input.value * 100).to_i : '---',
+          curve.delta_e_limit ? (curve.delta_e_limit.input.value * 100).to_i : '---',
+          dmin, dmax, dmax - dmin,
+        ]
+      end
+    end
   
     def dump
       @curves.each do |curve|
