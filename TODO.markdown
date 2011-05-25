@@ -49,11 +49,10 @@
 - Add confirmation/testing step to profiling:
   - To test ink settling, sample fading, etc.
   - Show actual tonal response curve.
-  - Show dMin/dMax.
   - Show Lab curve (eg, ink color).
   - Show charts for final curves.
   - If multiple test results exist:
-    - Graph change of lineazation, dMax, color, etc.
+    - Graph change of linearization, density range, color, etc.
 
 - Remove hard-coded 'require' of 'cupsffi'.
 
