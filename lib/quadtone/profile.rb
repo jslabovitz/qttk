@@ -204,6 +204,12 @@ module Quadtone
       printer = CupsPrinter.new(@printer.dup)
       options['ripCurve1'] = @name if options['ColorModel'] != 'QTCAL'
       options.merge!(@printer_options)
+      warn "Printing:"
+      warn "\t" + image_path
+      warn "Options:"
+      options.each do |key, value|
+        warn "\t" + "%10s: %s" % [key, value.inspect]
+      end
       printer.print_file(image_path, options)
     end
     
@@ -215,21 +221,24 @@ module Quadtone
       size
     end
     
-    def dump_printer_options
+    def print_printer_attributes
       puts "Attributes:"
       @ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
-        puts "\t" + "%s%s: %s" % [
+        puts "\t" + "%25s: %s%s" % [
           attribute[:name],
-          attribute[:spec].empty? ? '' : " (#{attribute[:spec]})",
-          attribute[:value]
+          attribute[:value].inspect,
+          attribute[:spec].empty? ? '' : " [#{attribute[:spec].inspect}]"
         ]
       end
+    end
+
+    def print_printer_options
       puts "Options:"
       @ppd.options.sort_by { |o| o[:keyword] }.each do |option|
-        puts "\t" + "%s: %s [%s]" % [
+        puts "\t" + "%25s: %s [%s]" % [
           option[:keyword],
-          option[:default_choice],
-          (option[:choices].map { |o| o[:choice] } - [option[:default_choice]]).join(' ')
+          option[:default_choice].inspect,
+          (option[:choices].map { |o| o[:choice] } - [option[:default_choice]]).map { |o| o.inspect }.join(', ')
         ]
       end
     end
