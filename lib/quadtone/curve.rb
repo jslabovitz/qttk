@@ -62,7 +62,7 @@ module Quadtone
     end
     
     def dynamic_range
-      interpolated_samples(2).map { |s| Math::log10(100.0 / s.output.l) }
+      interpolated_samples(2).map { |s| s.output }
     end
     
     class Spline

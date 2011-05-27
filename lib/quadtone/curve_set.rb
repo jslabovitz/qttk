@@ -233,12 +233,14 @@ module Quadtone
       puts "Curve set:"
       @curves.each do |curve|
         dmin, dmax = curve.dynamic_range
-        puts "\t" + "%3s: ink limits: chroma = %3s%%, density = %3s%%, deltaE = %3s%%; density: dMin = %.2f, dMax = %.2f, range = %.2f" % [
+        puts "\t" + "%3s: ink limits: chroma = %3s%%, density = %3s%%, deltaE = %3s%%; density: min = %3d%% (%3.2f D), max = %3d%% (%.2f D), range = %.2f D" % [
           curve.key,
           curve.chroma_limit ? ( curve.chroma_limit.input.value * 100).to_i : '---',
           curve.density_limit ? (curve.density_limit.input.value * 100).to_i : '---',
           curve.delta_e_limit ? (curve.delta_e_limit.input.value * 100).to_i : '---',
-          dmin, dmax, dmax - dmin,
+          (dmin.value * 100).to_i, Math::log10(100.0 / dmin.l),
+          (dmax.value * 100).to_i, Math::log10(100.0 / dmax.l),
+          Math::log10(dmin.l / dmax.l),
         ]
       end
     end
