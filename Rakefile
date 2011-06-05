@@ -38,7 +38,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency('gsl',       '~> 1.14.7')
   s.add_dependency('pathname3', '~> 1.2.5')
   s.add_dependency('rmagick',   '~> 2.13.1')
-  s.add_dependency('cupsffi',   '~> 0.0.3')
+  s.add_dependency('cupsffi',   '~> 0.0.5')
 
   # If your tests use any gems, include them here
   # s.add_development_dependency("mocha") # for example

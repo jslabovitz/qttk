@@ -3,7 +3,6 @@ require 'pp'
 require 'yaml'
 
 # gems
-require 'color'
 require 'gsl'
 require 'pathname3'
 require 'rvg/rvg'   # includes 'rmagick'

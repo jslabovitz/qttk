@@ -54,8 +54,6 @@
   - If multiple test results exist:
     - Graph change of linearization, density range, color, etc.
 
-- Remove hard-coded 'require' of 'cupsffi'.
-
 - Build web interface.
   - Create account.
   - Create new profile.
