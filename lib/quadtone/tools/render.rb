@@ -86,7 +86,10 @@ module Quadtone
         end
         
         # Rotate to portrait mode if necessary
-        image.rotate!(90, '>')
+        if (image.columns.to_f / image.rows) < (page_width.to_f / page_height)
+          ;;warn "\t" + "Rotating"
+          image.rotate!(90)
+        end
         
         # Scale to desired size
         h_scale = desired_width.to_f / image.columns
