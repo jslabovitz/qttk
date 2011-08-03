@@ -1,6 +1,0 @@
-syntax: glob
-.yardoc
-pkg/*
-*.gemspec
-syntax: regexp
-\.DS_Store
