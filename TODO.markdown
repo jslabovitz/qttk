@@ -4,7 +4,19 @@
   - Use CupsFFI instead of 'lpadmin' to determine default printer.
   - Add initial ink-limit to profile/target.
     - To allow for more accurate results on papers known to be very absorbent.
+    - From posting on DigitalBW: "Find the limit of the full black ink by watching for
+      slight puddling and or printing a pattern with some 1 pixel spaced white lines 
+      surrounded by much larger areas of solid black. When the edges of those 1 pixel 
+      lines start to get fuzzy, you have too much ink.
+
   - Allow negation of inks (eg, '-LLK').
+  - Find good printer defaults:
+    - Medium/high resolution (1440/2880).
+    - Unidirectional ("lospeed").
+    - Dithering mode ("Ordered")
+  - Save *all* printer options to profile (again) so they can be shown/verified.
+  - Add new commands "profile" and "linearize":
+    - Save curves to profile so they are only generated once.
 
 - Improve target generation:
   - Separate generation of target reference file from target image.
