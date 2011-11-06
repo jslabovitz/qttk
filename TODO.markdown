@@ -48,7 +48,9 @@
   - Generate our own QTR curves.
     - Pre-linearize of individual channels.
     - Create smoother curves (using bsplines?).
-  
+  - Use L* profiling?
+    - http://tech.groups.yahoo.com/group/QuadtoneRIP/message/9691
+    
 - Improve charting:
   - Add option to normalize curves in charts.
   - If Lab color, somehow draw a/b values.
