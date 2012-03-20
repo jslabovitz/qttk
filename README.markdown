@@ -44,29 +44,38 @@ The development of these tools came out of a over a decade's work with the quadt
 There is a single binary command installed, called **qt**.  This binary has several subcommands, referred to here as 'tools'.  Here are a few examples:
     
     # Add a new printer
-    $ qt add-printer Quad4000-C6
-
+    qt add-printer Quad4000-C6
+    
+    # Examine the printer's options
+    qt printer-options --printer Quad4000-C6
+    
     # Make a directory for a new profile
     mkdir GenericMatte
     cd GenericMatte
     
-    # Initialize the new profile for a given printer
-    $ qt init GenericMatte Quad4000-C6
+    # Initialize the new profile for a given printer, specific inks, and a particular resolution
+    qt init GenericMatte --printer Quad4000-C6 --inks K,C,M,LC,LM,Y --resolution XXX
     
-    # Print the characterization target, and measure using spectrophotometer
-    # (print 'characterization.reference.tif' using QTR calibration mode, measure using MeasureTool, save as 'characterization.measured.txt')
+    # Print the characterization target
+    qt print --calibrate characterization.reference.tif
+    
+    # Measure the printed characterization target
+    # (measure using MeasureTool, save as 'characterization.measured.txt')
     
     # Characterize the profile based on the measured data; also install as QTR curve
-    $ qt characterize
+    qt characterize
 
-    # Print the linearization target, and measure using spectrophotometer
-    # (print 'linearization.reference.tif' using QTR curve, measure using MeasureTool, save as 'linearization.measured.txt')
+    # Print the linearization target
+    qt print linearization.reference.tif
+    
+    # Measure the printed linearization target
+    # (measure using MeasureTool, save as 'linearization.measured.txt')
     
     # Linearize the profile based on the measured data; also install as QTR curve
-    $ qt linearize
+    qt linearize
 
     # Read image.jpg and create grayscale channel separations, based on existing curve (outputs montaged separations to image.tif)
-    $ qt separate /Library/Printers/QTR/quadtone/Quad4000-C6/GenericMatte.quad --montage image.jpg
+    qt separate /Library/Printers/QTR/quadtone/Quad4000-C6/GenericMatte.quad --montage image.jpg
   
 
 ## Installation
