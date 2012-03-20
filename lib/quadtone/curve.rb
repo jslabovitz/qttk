@@ -68,31 +68,19 @@ module Quadtone
     class Spline
       
       def initialize(samples)
-        if samples.length >= 5
-          type = 'akima'
-        elsif samples.length >= 3
-          type = 'cspline'
-        elsif samples.length >= 2
-          type = 'linear'
-        else
-          raise "Curve must have at least two samples"
-        end
         @color_class = samples.first.output.class
-        @gsl_splines = {}
+        @sub_splines = {}
         @color_class.component_names.each_with_index do |component_name, component_index|
-          inputs = GSL::Vector[samples.length]
-          outputs = GSL::Vector[samples.length]
-          samples.each_with_index do |sample, i|
-            inputs[i]  = sample.input.value
-            outputs[i] = sample.output.components[component_index]
+          points = samples.map do |sample, i|
+            ::Spline::Point.new(sample.input.value, sample.output.components[component_index])
           end
-          @gsl_splines[component_name] = GSL::Spline.alloc(type, inputs, outputs)
+          @sub_splines[component_name] = ::Spline.new(points)
         end
       end
       
       def [](input)
         component_values = @color_class.component_names.map do |component_name|
-          @gsl_splines[component_name].eval(input.value)
+          @sub_splines[component_name].interpolate(input.value).y
         end
         @color_class.new(*component_values)
       end

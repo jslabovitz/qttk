@@ -3,7 +3,6 @@ require 'pp'
 require 'yaml'
 
 # gems
-require 'gsl'
 require 'pathname3'
 require 'rvg/rvg'   # includes 'rmagick'
 require 'builder'   # for SVG generation
@@ -24,6 +23,7 @@ require 'quadtone/extensions/pathname3'
 require 'quadtone/profile'
 require 'quadtone/sample'
 require 'quadtone/separator'
+require 'quadtone/spline'
 require 'quadtone/target'
 require 'quadtone/tool'
 require 'quadtone/tools/add_printer'
