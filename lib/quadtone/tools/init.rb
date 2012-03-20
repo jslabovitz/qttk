@@ -28,16 +28,17 @@ module Quadtone
       end
     end
   
-    def run(name)
+    def run(name=nil)
+      name = Pathname.new('.').realpath.basename
       printer_options = {}
       printer_options.merge!('Resolution' => @resolution) if @resolution
       profile = Profile.new(
         :name => name,
         :printer => @printer,
         :printer_options => printer_options,
-        :inks => @inks,
-      )
+        :inks => @inks)
       profile.save!
+      ;;warn "Created profile #{profile.name.inspect} using #{@inks ? @inks.join(',') : 'default'} inks for printer #{@printer.inspect}, (options = #{printer_options.inspect})"
     end
   
   end
