@@ -75,19 +75,19 @@ Prerequisites:
 
 - Mac OS X (10.6 or later)
 - Ruby (1.9.2 or later)
-- External libraries: [GNU Scientific Library](http://www.gnu.org/software/gsl/), [ImageMagick](http://www.imagemagick.org)
-- Various Ruby modules (see `Rakefile` for latest requirements, but generally these will be installed automatically)
+- [ImageMagick](http://www.imagemagick.org) (6.7 or later)
+- Various Ruby modules (see `qttk.gemspec` for latest requirements, but generally these will be installed automatically)
 - [Quadtone RIP](http://www.quadtonerip.com)
 - an inkjet printer supported by QTR (see [QTR requirements](http://www.quadtonerip.com/html/QTRrequire.html)), loaded with several gray shades of ink
 - an EyeOne (i1) spectrophotometer (other devices, perhaps including flatbed scanners, to be supported in the future)
 
-I highly suggest that you install Ruby, GSL, and ImageMagick using either [Brew](https://github.com/mxcl/homebrew) or [MacPorts](http://macports.org).
+I highly suggest that you install Ruby using [RVM](https://rvm.beginrescueend.com/) and ImageMagick using [Brew](https://github.com/mxcl/homebrew).
 
-Once the above packages are present, install QTTR by simply typing:
+Once the above packages are present, install QTTR by typing:
 
     $ gem install quadtone
 
-QTTK has been developed and tested under Mac OS X Snow Leopard (10.6).  While it is in the development phase, QTTK is not designed or guaranteed to be usable on any other versions of OS X, or indeed any other systems.
+QTTK has been developed and tested under Mac OS X Lion (10.7).  While it is in the development phase, QTTK is not designed or guaranteed to be usable on any other versions of OS X, or indeed any other systems.
 
 
 ## Further information and resources
