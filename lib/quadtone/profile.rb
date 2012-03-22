@@ -140,7 +140,27 @@ module Quadtone
     end
     
     def build_characterization_target(options={})
-      #FIXME
+      @inks.each do |ink|
+        name = "#{@name}-#{ink}"
+        ;;warn "Making target #{name.inspect}"
+        run('targen',
+          '-d', 0,              # generate grayscale target
+          name)
+        run('printtarg',
+          '-i', 'i1',           # set instrument to EyeOne (FIXME: make configurable)
+          '-t',                 # generate 8-bit TIFF
+          '-R', 1,              # start random seed at 1
+          '-p', '38x279',       # page size
+          '-L',                 # suppress paper clip border
+          '-M', 0,              # zero margin
+      		name)
+      	rgb = Color::QTR.new(ink, 1).to_rgb
+    		run('convert',
+    		  "#{name}.tif",
+    		  '-fill', "rgb(#{rgb.join(',')})",
+    		  '-colorize', '100,0,100',
+    		  "#{name}.tif")
+      end
     end
     
     def build_linearization_target(options={})
