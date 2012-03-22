@@ -53,8 +53,11 @@ There is a single binary command installed, called **qt**.  This binary has seve
     mkdir GenericMatte
     cd GenericMatte
     
-    # Initialize the new profile for a given printer, specific inks, and a particular resolution
-    qt init GenericMatte --printer Quad4000-C6 --inks K,C,M,LC,LM,Y --resolution XXX
+    # Initialize a new profile for a given printer, specific inks, and a particular resolution
+    qt init --printer Quad4000-C6 --inks K,C,M,LC,LM,Y --resolution XXX
+    
+    # Create characterization and linearization target files (both data & images)
+    qt target
     
     # Print the characterization target
     qt print --calibrate characterization.reference.tif
@@ -63,7 +66,7 @@ There is a single binary command installed, called **qt**.  This binary has seve
     # (measure using MeasureTool, save as 'characterization.measured.txt')
     
     # Characterize the profile based on the measured data; also install as QTR curve
-    qt characterize
+    qt profile
 
     # Print the linearization target
     qt print linearization.reference.tif
@@ -71,12 +74,34 @@ There is a single binary command installed, called **qt**.  This binary has seve
     # Measure the printed linearization target
     # (measure using MeasureTool, save as 'linearization.measured.txt')
     
-    # Linearize the profile based on the measured data; also install as QTR curve
-    qt linearize
-
+    # Generate SVG chart for measured linearization target (open with SVG-aware browser)
+    qt chart linearization.measured.txt
+    
+    # Generate SVG charts for profile (both characterization & linearization) (open with SVG-aware browser)
+    qt chart
+    
     # Read image.jpg and create grayscale channel separations, based on existing curve (outputs montaged separations to image.tif)
     qt separate /Library/Printers/QTR/quadtone/Quad4000-C6/GenericMatte.quad --montage image.jpg
+    
+    ##FIXME: document other tools:
+    #   dump
+    #   render
+    #   test
   
+
+## Printing a target
+
+It is essential that you can print a target without its values being modified by the application that's printing it. I have had little luck with Lightroom, and Photoshop has been classically tricky to get right, especially on a Mac. OS X's Preview application seems to do fine, as does Adobe Color Printer Utility.
+
+
+## Measuring a printed target
+
+First, let the profile dry completely at room temperature, or use a hair dryer, microwave oven, or other heater to dry more quickly.
+
+Place several (2-3) sheets of paper of the same type as the printed target on your workspace, with the printed target on top. (This ensures that the workspace color will not affect the readings.)
+
+When using a strip-reading spectrophotometer, move the instrument slowly across the strip being read. If a row continues to have errors, you may need to read the patches spot by spot, instead of by strip.
+
 
 ## Installation
 
@@ -84,13 +109,14 @@ Prerequisites:
 
 - Mac OS X (10.6 or later)
 - Ruby (1.9.2 or later)
-- [ImageMagick](http://www.imagemagick.org) (6.7 or later)
 - Various Ruby modules (see `qttk.gemspec` for latest requirements, but generally these will be installed automatically)
-- [Quadtone RIP](http://www.quadtonerip.com)
+- [ImageMagick](http://www.imagemagick.org) (6.7 or later)
+- [ArgyllCMS](argyllcms.com) (1.3.6 or later)
+- [QuadtoneRIP](http://www.quadtonerip.com), Roy Harrington's [QuadtoneRIP](http://www.quadtonerip.com) shareware ($50) grayscale RIP system.  For Windows, it is a standalone application; for OS X, it is installed as a set of printer drivers and supporting profiles and other resources.
 - an inkjet printer supported by QTR (see [QTR requirements](http://www.quadtonerip.com/html/QTRrequire.html)), loaded with several gray shades of ink
 - an EyeOne (i1) spectrophotometer (other devices, perhaps including flatbed scanners, to be supported in the future)
 
-I highly suggest that you install Ruby using [RVM](https://rvm.beginrescueend.com/) and ImageMagick using [Brew](https://github.com/mxcl/homebrew).
+I highly suggest that you install Ruby using [RVM](https://rvm.beginrescueend.com/), ImageMagick using [Brew](https://github.com/mxcl/homebrew), and ArgyllCMS and QuadtoneRIP using their respective binary package installers.
 
 Once the above packages are present, install QTTR by typing:
 
@@ -101,9 +127,7 @@ QTTK has been developed and tested under Mac OS X Lion (10.7).  While it is in t
 
 ## Further information and resources
 
-- Roy Harrington's [QuadtoneRIP](http://www.quadtonerip.com) (QTR) is a shareware ($50) grayscale RIP system.  For Windows, it is a standalone application; for OS X, it is installed as a set of printer drivers.  QTR comes with a vast number of prebuilt profiles for many Epson printers with several major inksets.
-
-- Paul Roark has a wonderful and extremely useful library of [Digital Black & White Printing Information](http://www.paulroark.com/BW-Info/).  His work on 'homebrewed' carbon inkjet inks (see <http://www.paulroark.com/BW-Info/Ink-Mixing.pdf>) is particularly valuable to me, and will be for any aspiring printmaker.
+- Paul Roark has an extremely useful library of [Digital Black & White Printing Information](http://www.paulroark.com/BW-Info/).  His work on 'homebrewed' carbon inkjet inks (see <http://www.paulroark.com/BW-Info/Ink-Mixing.pdf>) is particularly valuable to me, and will be for any aspiring printmaker.
 
 - Jon Cone and his associates have been pioneers in quadtone inkjet printing.  Their [Piezography](http://piezography.com) system has gone through several incarnations, and was where I started quadtone printing with the now-antique Epson 1160.  Although they now utilize QTR as their software, they use a proprietary method of generating much smoother curves.  They also sell their own quadtone inks, in a variety of tones and channels.
 

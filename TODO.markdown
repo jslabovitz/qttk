@@ -15,18 +15,20 @@
     - Unidirectional ("lospeed").
     - Dithering mode ("Ordered")
   - Save *all* printer options to profile (again) so they can be shown/verified.
-  - Add new commands "profile" and "linearize":
-    - Save curves to profile so they are only generated once.
+  - Save curves to profile so they are only generated once (when profiled).
 
 - Improve target generation:
-  - Separate generation of target reference file from target image.
-    - Image file should just be generated from reference file.
-  - Let test targets cross multiple pages.
+  - Replace current system with Argyll front-end:
+    - Generate targets (targen)
+    - Montage onto single page (?)
+    - Create target image (printtag)
+    - Measure target (chartread)
+      - Iterate once per ink
+      - Calibrate on first pass
   - Add info banner to target:
     - Mode (characterization, linearization, etc.)
     - Date
     - Profile info (printer, paper, inks)
-    - Page (n/m).
 
 - Improve analysis:
   - Retain individual output samples from measured target
@@ -52,8 +54,9 @@
     - http://tech.groups.yahoo.com/group/QuadtoneRIP/message/9691
     
 - Improve charting:
-  - Add option to normalize curves in charts.
-  - If Lab color, somehow draw a/b values.
+  - Write HTML file, with embedded graphics (SVG?).
+  - Optionally normalize curves in charts.
+  - Represent a/b for measured (L*a*b) colors.
   - Parameterize error threshold.
   - Show individual sample points.
   - Investigate using RVG for charts instead of SVG (if so, remove 'builder' dependency).
@@ -90,12 +93,5 @@
 
 - Document classes & methods.
 
-- Figure out why ColorPort fails to read our reference target file.
-
-- Generate Argyll-compatible CGATS files:
-    targen -d 0 -f 21 foo
-    printtarg -i i1 foo
-    chartread -n -l -N -B -S foo
-
 - Bypass QTR entirely
-  - Use Gutenprint to generate ESC/P2 files.
+  - Use Gutenprint to generate DeviceN or ESC/P2 files.
