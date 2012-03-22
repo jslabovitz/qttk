@@ -1,5 +1,7 @@
 # after http://www.akiti.ca/CubicSpline.html
 
+# try http://www.geometrictools.com/LibMathematics/Interpolation/Interpolation.html
+
 class Spline
   
   class Point < Struct.new(:x, :y); end
