@@ -140,6 +140,8 @@ module Quadtone
     end
     
     def build_characterization_target(options={})
+      image_list = Magick::ImageList.new
+      tile_width = tile_height = nil
       @inks.each do |ink|
         name = "#{@name}-#{ink}"
         ;;warn "Making target #{name.inspect}"
@@ -150,16 +152,26 @@ module Quadtone
           '-i', 'i1',           # set instrument to EyeOne (FIXME: make configurable)
           '-t',                 # generate 8-bit TIFF
           '-R', 1,              # start random seed at 1
-          '-p', '38x279',       # page size
+          '-p', '38x260',       # page size just big enough to hold this target
           '-L',                 # suppress paper clip border
           '-M', 0,              # zero margin
       		name)
-      	rgb = Color::QTR.new(ink, 1).to_rgb
-    		run('convert',
-    		  "#{name}.tif",
-    		  '-fill', "rgb(#{rgb.join(',')})",
-    		  '-colorize', '100,0,100',
-    		  "#{name}.tif")
+        image = Magick::Image.read("#{name}.tif").first
+        tile_width ||= image.columns
+        tile_height ||= image.rows
+        # get the RGB values for a black pixel for this ink in QTR calibration mode
+      	rgb = Color::QTR.new(ink, 0).to_rgb.map { |c| (c / 255.0) * Magick::QuantumRange }
+        image = image.colorize(1, 0, 1, Magick::Pixel.new(*rgb))
+        image_list << image
+      end
+      image_list = image_list.montage do
+        self.geometry = Magick::Geometry.new(tile_width, tile_height)
+        self.tile = Magick::Geometry.new(image_list.length, 1)
+      end
+      image_list.write("#{@name}.tif")
+      @inks.each do |ink|
+        name = "#{@name}-#{ink}.tif"
+        Pathname.new(name).unlink
       end
     end
     
