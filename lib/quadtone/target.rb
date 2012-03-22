@@ -10,9 +10,48 @@ module Quadtone
       target
     end
     
+    def self.build(name, color_class, dest_dir='.')
+      dest_dir = Pathname.new(dest_dir)
+      image_list = Magick::ImageList.new
+      tile_width = tile_height = nil
+      color_class.component_names.each do |component|
+        sub_name = "#{name}-#{component}"
+        ;;warn "Making target #{sub_name.inspect}"
+        run('targen',
+          '-d', 0,              # generate grayscale target
+          dest_dir + sub_name)
+        run('printtarg',
+          '-i', 'i1',           # set instrument to EyeOne (FIXME: make configurable)
+          '-t',                 # generate 8-bit TIFF
+          '-R', 1,              # start random seed at 1
+          '-p', '38x260',       # page size just big enough to hold this target
+          '-L',                 # suppress paper clip border
+          '-M', 0,              # zero margin
+      		dest_dir + sub_name)
+        image = Magick::Image.read(dest_dir + "#{sub_name}.tif").first
+        tile_width ||= image.columns
+        tile_height ||= image.rows
+        if color_class == Color::QTR
+          # get the RGB values for a black pixel for this channel in QTR calibration mode
+        	rgb = Color::QTR.new(component, 0).to_rgb.map { |c| (c / 255.0) * Magick::QuantumRange }
+          image = image.colorize(1, 0, 1, Magick::Pixel.new(*rgb))
+        end
+        image_list << image
+      end
+      image_list = image_list.montage do
+        self.geometry = Magick::Geometry.new(tile_width, tile_height)
+        self.tile = Magick::Geometry.new(image_list.length, 1)
+      end
+      final_name = [name, color_class.to_s.split(/::/).last].join('-')
+      image_list.write(dest_dir + "#{final_name}.tif")
+      color_class.component_names.each do |component|
+        Pathname.new(dest_dir + "#{name}-#{component}.tif").unlink
+      end
+    end
+    
     def initialize
       @samples = []
-    end    
+    end
     
     def read_cgats_file!(cgats_file)
       @samples = CGATS.new_from_file(cgats_file).data.map { |set| Sample.from_cgats_data(set) }
