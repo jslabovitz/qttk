@@ -1,6 +1,8 @@
 module Quadtone
   
   class Target
+    
+    attr_accessor :samples
       
     def self.from_cgats_file(cgats_file)
       target = new
@@ -9,36 +11,11 @@ module Quadtone
     end
     
     def initialize
-      @table = [[]]
-    end
-    
-    def num_columns
-      @table.map(&:length).max
-    end
-  
-    def <<(samples)
-      [samples].flatten.each do |sample|
-        cur_row = @table[-1]
-        if cur_row.length == max_columns
-          raise "Not enough rows to add more samples" if num_rows == max_rows
-          @table << (cur_row = [])
-        end
-        cur_row << sample
-      end
-    end
-    
-    def samples
-      @table.flatten.compact
-    end
+      @samples = []
+    end    
     
     def read_cgats_file!(cgats_file)
-      cgats = CGATS.new_from_file(cgats_file)
-      cgats.data.each do |set|
-        sample = Sample.from_cgats_data(set)
-        row, column = CGATS::row_column_for_label(set['SAMPLE_LOC'])
-        @table[row] ||= []
-        @table[row][column] = sample
-      end
+      @samples = CGATS.new_from_file(cgats_file).data.map { |set| Sample.from_cgats_data(set) }
     end
     
   end

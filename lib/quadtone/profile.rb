@@ -140,6 +140,9 @@ module Quadtone
     end
     
     def build_characterization_target(options={})
+      
+      # build_target(@name, Color::QTR)
+      
       image_list = Magick::ImageList.new
       tile_width = tile_height = nil
       @inks.each do |ink|
