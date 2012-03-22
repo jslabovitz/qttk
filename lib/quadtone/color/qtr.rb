@@ -86,10 +86,6 @@ module Color
       to_rgb
     end
     
-    def html
-      '#' + (to_rgb.map { |n| "%02x" % n }.join)
-    end
-    
     def inspect
       "<%s: %.2f>" % [@channel, value * 100]
     end

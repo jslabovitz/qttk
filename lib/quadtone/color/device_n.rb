@@ -18,10 +18,6 @@ module Color
       Color::Gray.new(@components.find { |c| c != 0 } || 0)
     end
     
-    def html
-      to_gray.html
-    end
-    
     def inspect
       "<DeviceN: %s>" % [@components.map { |c| "%3d" % (c*100) }].join(' ')
     end

@@ -26,10 +26,6 @@ module Color
       [value * 100]
     end
     
-    def html
-      '#' + (("%02x" % (255 - (value * 255))) * 3)
-    end
-
     def inspect
       "<Gray: %.2f>" % (value * 100)
     end
