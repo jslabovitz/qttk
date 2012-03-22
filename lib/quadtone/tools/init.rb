@@ -7,7 +7,6 @@ module Quadtone
     
     attr_accessor :name
     attr_accessor :printer
-    attr_accessor :inks
     attr_accessor :resolution
     
     def initialize
@@ -17,10 +16,6 @@ module Quadtone
     
     def parse_option(option, args)
       case option
-      when '--inks', '-i'
-        inks = args.shift.split(/\s+|,/)
-        #FIXME: Handle negation (-LLK)
-        @inks = inks.map { |ink| ink.to_sym }
       when '--printer', '-p'
         @printer = args.shift
       when '--resolution', '-r'
@@ -35,10 +30,9 @@ module Quadtone
       profile = Profile.new(
         :name => name,
         :printer => @printer,
-        :printer_options => printer_options,
-        :inks => @inks)
+        :printer_options => printer_options)
       profile.save!
-      ;;warn "Created profile #{profile.name.inspect} using #{@inks ? @inks.join(',') : 'default'} inks for printer #{@printer.inspect}, (options = #{printer_options.inspect})"
+      ;;warn "Created profile #{profile.name.inspect}"
     end
   
   end

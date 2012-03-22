@@ -184,51 +184,6 @@ module Quadtone
       Pathname.new(file).open('w').write(xml.target!)
     end
   
-    def fill_target(target, options={})
-      steps = options[:steps]
-      oversample = options[:oversample]
-      if steps.nil?
-        raise "Must specify oversample" unless oversample
-        steps = target.max_samples / (oversample * @curves.length)
-      elsif oversample.nil?
-        raise "Must specify steps" unless steps
-        oversample = target.max_samples / (steps * @curves.length)
-      end
-      raise "Must specify either steps or oversample" unless steps && oversample
-      target.background_color = self.class.target_background_color
-      target.foreground_color = self.class.target_foreground_color
-      samples = []
-      @curves.each do |curve|
-        # create scale for this channel
-        scale_samples = curve.interpolated_samples(steps).map do |sample|
-          Sample.new(self.class.color_for_channel_value(curve.key, sample.input.value), nil)
-        end
-        # shuffle scale samples so they are alternating light/dark
-        mid = (scale_samples.length / 2) + 1
-        light_scale = scale_samples[0 ... mid]
-        dark_scale  = scale_samples[mid .. -1]
-        new_scale = []
-        until light_scale.empty? && dark_scale.empty?
-          new_scale += [light_scale.shift, dark_scale.shift]
-        end
-        scale_samples = new_scale.compact
-        # add multiple instances of each sample for each channel
-        samples += scale_samples * oversample
-      end
-      # fill remaining slots in final column with background color, if needed
-      if (remaining = samples.length % target.max_columns) != 0
-        samples += [Sample.new(self.class.target_background_color, nil)] * (target.max_columns - remaining)
-      end
-      ;;warn "generated #{samples.length} samples covering channels: #{@channels.join(' ')} using #{steps} steps @ #{oversample}x oversampling (plus #{remaining} paper samples)"
-      # add samples randomly, starting with known seed so we get equivalent randomization
-      if options[:randomize]
-        target << samples.randomize(1)
-      else
-        target << samples
-      end
-      target
-    end
-    
     def print_statistics
       puts "Curve set:"
       @curves.each do |curve|
@@ -258,6 +213,7 @@ module Quadtone
       end
     
       def self.color_for_channel_value(channel, value)
+        raise "Channel #{channel.inspect} must be one of: #{Color::QTR.component_names}" unless Color::QTR.component_names.include?(channel)
         Color::QTR.new(channel, value)
       end
     
@@ -278,6 +234,7 @@ module Quadtone
       end
     
       def self.color_for_channel_value(channel, value)
+        raise "Channel #{channel.inspect} must be one of: #{Color::DeviceN.component_names}" unless Color::DeviceN.component_names.include?(channel)
         components = [0] * Color::DeviceN.num_components
         components[channel] = value
         Color::DeviceN.new(components)
@@ -296,10 +253,11 @@ module Quadtone
     class Grayscale < CurveSet
     
       def self.all_channels
-        [:G]
+        Color::Gray.component_names
       end
     
       def self.color_for_channel_value(channel, value)
+        raise "Channel #{channel.inspect} must be one of: #{Color::Gray.component_names}" unless Color::Gray.component_names.include?(channel)
         Color::Gray.new(value)
       end
           

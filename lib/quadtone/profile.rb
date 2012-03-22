@@ -52,6 +52,10 @@ module Quadtone
           warn "Printer does not support option: #{option_name.inspect}"
         end
       end
+      # FIXME: It would be nice to get this path programmatically.
+      ppd_file = Pathname.new("/etc/cups/ppd/#{@printer}.ppd")
+      ink_description = ppd_file.readlines.find { |l| l =~ /^\*%Inks\s*(.*?)\s*$/ } or raise "Can't find inks description for printer #{@printer.inspect}"
+      @inks = ink_description.chomp.split(/\s+/, 2).last.split(/,/).map { |ink| ink.to_sym }
       read_curvesets!
     end
     
@@ -65,24 +69,36 @@ module Quadtone
     end
     
     def read_characterization_curveset!
-      if characterization_measured_path.exist?
-        if characterization_measured_path.mtime > @mtime
-          @characterization_curveset = CurveSet::QTR.from_samples(Target.from_cgats_file(characterization_measured_path).samples)
-          @characterization_curveset.print_statistics
-        else
-          warn "Ignoring out of date characterization file."
+      samples = []
+      @inks.each do |ink|
+        path = Pathname.new("#{CharacterizationName}-#{ink}.ti3")
+        if path.exist?
+          if path.mtime > @mtime
+            target = Target.from_cgats_file(path)
+            new_samples = target.samples.each { |s| s.input = Color::QTR.new(ink, s.input.value) }
+            warn "#{new_samples.length} measurements found for ink #{ink.inspect}"
+            samples += new_samples
+          else
+            warn "Ignoring out of date characterization file: #{path.to_s.inspect}"
+          end
         end
+      end
+      if samples.empty?
+        warn "No samples found"
+      else
+        @characterization_curveset = CurveSet::QTR.from_samples(samples)
+        @characterization_curveset.print_statistics
       end
     end
     
     def read_linearization_curveset!
       if linearization_measured_path.exist?
-        if characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime && linearization_measured_path.mtime > @mtime
+        # if characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime && linearization_measured_path.mtime > @mtime
           @linearization_curveset = CurveSet::Grayscale.from_samples(Target.from_cgats_file(linearization_measured_path).samples)
           @linearization_curveset.print_statistics
-        else
-          warn "Ignoring out of date linearization file."
-        end
+        # else
+          # warn "Ignoring out of date linearization file: #{linearization_measured_path}"
+        # end
       end
     end
             
@@ -107,7 +123,7 @@ module Quadtone
     end
     
     def linearization_measured_path
-      Pathname.new("#{LinearizationName}.measured.txt")
+      Pathname.new("#{CharacterizationName}-G.ti3")
     end
     
     def qtr_profile_path
@@ -124,31 +140,11 @@ module Quadtone
     end
     
     def build_characterization_target(options={})
-      default_options = { :steps => 21, :oversample => 4 }
-      curveset = CurveSet::QTR.new(@inks)
-      curveset.generate_scale
-      target = Target.new(*target_size)
-      curveset.fill_target(target, default_options.merge(options))
-      target.write_image_file(characterization_reference_path.with_extname('.tif'))
-      target.write_cgats_file(characterization_reference_path)
+      #FIXME
     end
     
     def build_linearization_target(options={})
-      default_options = { :steps => 21, :oversample => 4 }
-      curveset = CurveSet::Grayscale.new
-      curveset.generate_scale
-      target = Target.new(*target_size)
-      curveset.fill_target(target, default_options.merge(options))
-      target.write_image_file(linearization_reference_path.with_extname('.tif'))
-      target.write_cgats_file(linearization_reference_path)
-    end
-    
-    def target_size(name=nil)
-      page_size = self.page_size(name)
-      target_size = page_size[:imageable_width], page_size[:imageable_height]
-      # make portrait if needed
-      target_size.reverse! if target_size.first < target_size.last
-      target_size
+      #FIXME
     end
     
     def qtr_profile(io)

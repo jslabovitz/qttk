@@ -72,7 +72,7 @@ module Quadtone
     end
   
     def self.row_column_for_label(label)
-      label =~ /^([A-Z]+)(\d+)$/ or raise "Can't parse label: #{label.inspect}"
+      label =~ /([A-Z]+)(\d+)/ or raise "Can't parse label: #{label.inspect}"
       [$2.to_i - 1, ColumnLabels.index($1)]
     end
   

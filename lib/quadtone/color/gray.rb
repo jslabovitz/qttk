@@ -7,11 +7,11 @@ module Color
     end
     
     def self.cgats_fields
-      %w{GRAY}
+      %w{GRAY_K}
     end
     
     def self.component_names
-      [:value]
+      [:G]
     end
     
     def initialize(value)
