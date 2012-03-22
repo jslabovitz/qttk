@@ -84,7 +84,6 @@ There is a single binary command installed, called **qt**.  This binary has seve
     qt separate /Library/Printers/QTR/quadtone/Quad4000-C6/GenericMatte.quad --montage image.jpg
     
     ##FIXME: document other tools:
-    #   dump
     #   render
     #   test
   

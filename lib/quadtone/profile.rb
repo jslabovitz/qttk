@@ -238,7 +238,35 @@ module Quadtone
         ]
       end
     end
-  
+    
+    def to_html
+      html = Builder::XmlMarkup.new(:indent => 2)
+      html.declare!(:DOCTYPE, :html)
+      html.html do
+        html.head do
+          html.title("Profile: #{@name}")
+        end
+        html.body do
+          html.title("Profile: #{@name}")
+          html.div do
+            html.div do
+              if @characterization_curveset
+                html.h2("Characterization curves")
+                html << @characterization_curveset.to_svg
+              end
+            end
+            html.div do
+              if @linearization_curveset
+                html.h2("Linearization curve")
+                html << @linearization_curveset.to_svg
+              end
+            end
+          end
+        end
+      end
+      html.target!
+    end
+
   end
   
 end

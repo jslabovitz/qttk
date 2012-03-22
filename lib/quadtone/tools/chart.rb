@@ -4,19 +4,22 @@ include Quadtone
 module Quadtone
   
   class ChartTool < Tool
-      
+    
+    attr_accessor :open
+    
+    def parse_option(option, args)
+      case option
+      when '--open', '-o'
+        @open = true
+      end
+    end
+    
     def run
       profile = Profile.from_dir(@profile_dir)
-      if profile.characterization_curveset
-        svg_path = profile.characterization_measured_path.with_extname('.svg')
-        ;;warn "writing SVG file to #{svg_path}"
-        profile.characterization_curveset.write_svg_file(svg_path)
-      end
-      if profile.linearization_curveset
-        svg_path = profile.linearization_measured_path.with_extname('.svg')
-        ;;warn "writing SVG file to #{svg_path}"
-        profile.linearization_curveset.write_svg_file(svg_path)
-      end
+      html_path = Pathname.new('profile.html')
+      html_path.open('w') { |io| io.write(profile.to_html) }
+      ;;puts "Saved HTML to #{html_path}"
+      system 'open', html_path if @open
     end
   
   end

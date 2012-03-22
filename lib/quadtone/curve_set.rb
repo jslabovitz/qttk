@@ -123,65 +123,57 @@ module Quadtone
     def to_svg(options={})
       size = options[:size] || 500
       xml = Builder::XmlMarkup.new(:indent => 2)
-      xml.g(:width => size, :height => size) do
-        xml.g(:stroke => 'blue') do
-          xml.rect(:x => 0, :y => 0, :width => size, :height => size, :fill => 'none', :'stroke-width' => 1)
-          xml.line(:x1 => 0, :y1 => size, :x2 => size, :y2 => 0, :'stroke-width' => 0.5)
-        end
-        @curves.each do |curve|
+      xml.svg(:xmlns => 'http://www.w3.org/2000/svg', :version => '1.1') do
+        xml.g(:width => size, :height => size) do
+          xml.g(:stroke => 'blue') do
+            xml.rect(:x => 0, :y => 0, :width => size, :height => size, :fill => 'none', :'stroke-width' => 1)
+            xml.line(:x1 => 0, :y1 => size, :x2 => size, :y2 => 0, :'stroke-width' => 0.5)
+          end
+          @curves.each do |curve|
 
-          # draw individual samples
-          curve.samples.each do |sample|
-            xml.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2, :stroke => 'none', :fill => "rgb(#{sample.output.to_rgb.join(',')})")
-            if sample.error && sample.error > 0.05
-              xml.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2 + (sample.error * 10), :stroke => 'red', :fill => 'none')
+            # draw individual samples
+            curve.samples.each do |sample|
+              xml.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2, :stroke => 'none', :fill => "rgb(#{sample.output.to_rgb.join(',')})")
+              if sample.error && sample.error > 0.05
+                xml.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2 + (sample.error * 10), :stroke => 'red', :fill => 'none')
+              end
             end
-          end
           
-          # draw interpolated curve
-          samples = curve.interpolated_samples(size).map do |sample|
-            [size * sample.input.value, size * (1 - sample.output.value)]
-          end
-          xml.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
-            xml.polyline(:points => samples.map { |pt| pt.join(',') }.join(' '))
-          end
-          
-          # draw marker for ink limit (chroma)
-          if (limit = curve.chroma_limit)
-            x, y = size * limit.input.value, size * (1 - limit.output.value)
-            xml.g(:stroke => 'magenta', :'stroke-width' => 2) do
-              xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+            # draw interpolated curve
+            samples = curve.interpolated_samples(size).map do |sample|
+              [size * sample.input.value, size * (1 - sample.output.value)]
             end
-          end
-          
-          # draw marker for ink limit (density)
-          if (limit = curve.density_limit)
-            x, y = size * limit.input.value, size * (1 - limit.output.value)
-            xml.g(:stroke => 'black', :'stroke-width' => 2) do
-              xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+            xml.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
+              xml.polyline(:points => samples.map { |pt| pt.join(',') }.join(' '))
             end
-          end
           
-          # draw marker for ink limit (delta E)
-          if (limit = curve.delta_e_limit)
-            x, y = size * limit.input.value, size * (1 - limit.output.value)
-            xml.g(:stroke => 'cyan', :'stroke-width' => 2) do
-              xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+            # draw marker for ink limit (chroma)
+            if (limit = curve.chroma_limit)
+              x, y = size * limit.input.value, size * (1 - limit.output.value)
+              xml.g(:stroke => 'magenta', :'stroke-width' => 2) do
+                xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+              end
+            end
+          
+            # draw marker for ink limit (density)
+            if (limit = curve.density_limit)
+              x, y = size * limit.input.value, size * (1 - limit.output.value)
+              xml.g(:stroke => 'black', :'stroke-width' => 2) do
+                xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+              end
+            end
+          
+            # draw marker for ink limit (delta E)
+            if (limit = curve.delta_e_limit)
+              x, y = size * limit.input.value, size * (1 - limit.output.value)
+              xml.g(:stroke => 'cyan', :'stroke-width' => 2) do
+                xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+              end
             end
           end
         end
       end
       xml.target!
-    end
-  
-    def write_svg_file(file, options={})
-      xml = Builder::XmlMarkup.new(:indent => 2)
-      xml.instruct!
-      xml.declare!(:DOCTYPE, :svg, :PUBLIC, "-//W3C//DTD SVG 1.1//EN", "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd")
-      xml.svg(:version => '1.1', :xmlns => 'http://www.w3.org/2000/svg') do
-        xml << to_svg(options)
-      end
-      Pathname.new(file).open('w').write(xml.target!)
     end
   
     def print_statistics
@@ -197,12 +189,6 @@ module Quadtone
           (dmax.value * 100).to_i, Math::log10(100.0 / dmax.l),
           Math::log10(dmin.l / dmax.l),
         ]
-      end
-    end
-  
-    def dump
-      @curves.each do |curve|
-        curve.dump
       end
     end
   

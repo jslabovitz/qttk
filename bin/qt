@@ -7,7 +7,6 @@ require 'quadtone'
 Quadtone::Tool.process_args(ARGV,
   'add-printer'   => Quadtone::AddPrinterTool,
   'chart'         => Quadtone::ChartTool,
-  'dump'          => Quadtone::DumpTool,
   'init'          => Quadtone::InitTool,
   'print'         => Quadtone::PrintTool,
   'printer-options' => Quadtone::PrinterOptionsTool,
