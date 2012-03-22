@@ -4,8 +4,8 @@ require 'yaml'
 
 # gems
 require 'pathname3'
-require 'rvg/rvg'   # includes 'rmagick'
-require 'builder'   # for SVG generation
+require 'rmagick'
+require 'builder'
 require 'cupsffi'
 
 # ours

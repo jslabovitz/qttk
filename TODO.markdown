@@ -59,7 +59,6 @@
   - Represent a/b for measured (L*a*b) colors.
   - Parameterize error threshold.
   - Show individual sample points.
-  - Investigate using RVG for charts instead of SVG (if so, remove 'builder' dependency).
   - Display densities using log scale?
   - Use Jones diagrams for showing data <http://en.wikipedia.org/wiki/Jones_diagram>.
 
