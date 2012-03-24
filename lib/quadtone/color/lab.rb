@@ -104,6 +104,8 @@ module Color
     end
     
     def to_xyz
+      # after http://www.easyrgb.com/index.php?X=MATH&H=08#text8
+      
       y = (l + 16) / 116
       x = a / 500 + y
       z = y - b / 200
