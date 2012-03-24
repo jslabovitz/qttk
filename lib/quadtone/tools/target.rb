@@ -7,8 +7,7 @@ module Quadtone
     
     def run
       profile = Profile.from_dir(@profile_dir)
-      options = {}
-      profile.build_targets(options)
+      profile.build_targets
     end
   
   end

@@ -119,23 +119,70 @@ module Quadtone
       end
       separations
     end
-  
+    
+    def paper_value
+      if @paper
+        @paper.output
+      end
+    end
+    
+    def to_html
+      html = Builder::XmlMarkup.new(:indent => 2)
+      html << to_svg
+      html.ul do
+        html.li("Channels: #{@channels.join(', ')}")
+        html.li("Paper: #{paper_value.inspect}")
+      end
+      html.h3('Curve set:')
+      html.table(:border => 1) do
+        html.tr do
+          [
+            'key',
+            'ink limit: chroma',
+            'ink limit: density',
+            'ink limit: deltaE',
+            'density: min',
+            'density: min (D)',
+            'density: max',
+            'density: max (D)',
+            'density: range (D)',
+          ].each { |s| html.th(s) }
+        end
+        @curves.each do |curve|
+          html.tr do
+            dmin, dmax = curve.dynamic_range
+          # puts "\t" + "%3s: ink limits: chroma = %3s%%, density = %3s%%, deltaE = %3s%%; density: min = %3d%% (%3.2f D), max = %3d%% (%.2f D), range = %.2f D" % 
+            [
+              curve.key.to_s,
+              curve.chroma_limit  ? ('%3d%%' % (curve.chroma_limit.input.value * 100)) : '--',
+              curve.density_limit ? ('%3d%%' % (curve.density_limit.input.value * 100)) : '--',
+              curve.delta_e_limit ? ('%3d%%' % (curve.delta_e_limit.input.value * 100)) : '--',
+              (dmin.value * 100).to_i, Math::log10(100.0 / dmin.l),
+              (dmax.value * 100).to_i, Math::log10(100.0 / dmax.l),
+              Math::log10(dmin.l / dmax.l),
+            ].each { |s| html.td(s) }
+          end
+        end
+      end
+      html.target!
+    end
+    
     def to_svg(options={})
       size = options[:size] || 500
-      xml = Builder::XmlMarkup.new(:indent => 2)
-      xml.svg(:xmlns => 'http://www.w3.org/2000/svg', :version => '1.1') do
-        xml.g(:width => size, :height => size) do
-          xml.g(:stroke => 'blue') do
-            xml.rect(:x => 0, :y => 0, :width => size, :height => size, :fill => 'none', :'stroke-width' => 1)
-            xml.line(:x1 => 0, :y1 => size, :x2 => size, :y2 => 0, :'stroke-width' => 0.5)
+      svg = Builder::XmlMarkup.new(:indent => 2)
+      svg.svg(:xmlns => 'http://www.w3.org/2000/svg', :version => '1.1') do
+        svg.g(:width => size, :height => size) do
+          svg.g(:stroke => 'blue') do
+            svg.rect(:x => 0, :y => 0, :width => size, :height => size, :fill => 'none', :'stroke-width' => 1)
+            svg.line(:x1 => 0, :y1 => size, :x2 => size, :y2 => 0, :'stroke-width' => 0.5)
           end
           @curves.each do |curve|
 
             # draw individual samples
             curve.samples.each do |sample|
-              xml.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2, :stroke => 'none', :fill => "rgb(#{sample.output.to_rgb.join(',')})")
+              svg.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2, :stroke => 'none', :fill => "rgb(#{sample.output.to_rgb.join(',')})")
               if sample.error && sample.error > 0.05
-                xml.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2 + (sample.error * 10), :stroke => 'red', :fill => 'none')
+                svg.circle(:cx => size * sample.input.value, :cy => size * (1 - sample.output.value), :r => 2 + (sample.error * 10), :stroke => 'red', :fill => 'none')
               end
             end
           
@@ -143,53 +190,37 @@ module Quadtone
             samples = curve.interpolated_samples(size).map do |sample|
               [size * sample.input.value, size * (1 - sample.output.value)]
             end
-            xml.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
-              xml.polyline(:points => samples.map { |pt| pt.join(',') }.join(' '))
+            svg.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
+              svg.polyline(:points => samples.map { |pt| pt.join(',') }.join(' '))
             end
           
             # draw marker for ink limit (chroma)
             if (limit = curve.chroma_limit)
               x, y = size * limit.input.value, size * (1 - limit.output.value)
-              xml.g(:stroke => 'magenta', :'stroke-width' => 2) do
-                xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+              svg.g(:stroke => 'magenta', :'stroke-width' => 2) do
+                svg.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
               end
             end
           
             # draw marker for ink limit (density)
             if (limit = curve.density_limit)
               x, y = size * limit.input.value, size * (1 - limit.output.value)
-              xml.g(:stroke => 'black', :'stroke-width' => 2) do
-                xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+              svg.g(:stroke => 'black', :'stroke-width' => 2) do
+                svg.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
               end
             end
           
             # draw marker for ink limit (delta E)
             if (limit = curve.delta_e_limit)
               x, y = size * limit.input.value, size * (1 - limit.output.value)
-              xml.g(:stroke => 'cyan', :'stroke-width' => 2) do
-                xml.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+              svg.g(:stroke => 'cyan', :'stroke-width' => 2) do
+                svg.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
               end
             end
           end
         end
       end
-      xml.target!
-    end
-  
-    def print_statistics
-      puts "Curve set:"
-      @curves.each do |curve|
-        dmin, dmax = curve.dynamic_range
-        puts "\t" + "%3s: ink limits: chroma = %3s%%, density = %3s%%, deltaE = %3s%%; density: min = %3d%% (%3.2f D), max = %3d%% (%.2f D), range = %.2f D" % [
-          curve.key,
-          curve.chroma_limit ? ( curve.chroma_limit.input.value * 100).to_i : '---',
-          curve.density_limit ? (curve.density_limit.input.value * 100).to_i : '---',
-          curve.delta_e_limit ? (curve.delta_e_limit.input.value * 100).to_i : '---',
-          (dmin.value * 100).to_i, Math::log10(100.0 / dmin.l),
-          (dmax.value * 100).to_i, Math::log10(100.0 / dmax.l),
-          Math::log10(dmin.l / dmax.l),
-        ]
-      end
+      svg.target!
     end
   
     class QTR < CurveSet

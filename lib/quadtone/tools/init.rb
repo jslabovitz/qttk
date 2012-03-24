@@ -33,6 +33,7 @@ module Quadtone
         :printer_options => printer_options)
       profile.save!
       ;;warn "Created profile #{profile.name.inspect}"
+      profile.build_targets
     end
   
   end

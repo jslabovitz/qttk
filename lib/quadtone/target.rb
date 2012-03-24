@@ -10,11 +10,11 @@ module Quadtone
       target
     end
     
-    def self.build(name, color_class, dest_dir='.')
+    def self.build(name, inks, color_class, dest_dir='.')
       dest_dir = Pathname.new(dest_dir)
       image_list = Magick::ImageList.new
       tile_width = tile_height = nil
-      color_class.component_names.each do |component|
+      inks.each do |component|
         sub_name = "#{name}-#{component}"
         ;;warn "Making target #{sub_name.inspect}"
         run('targen',
@@ -22,9 +22,10 @@ module Quadtone
           dest_dir + sub_name)
         run('printtarg',
           '-i', 'i1',           # set instrument to EyeOne (FIXME: make configurable)
+          '-b',                 # force B&W spacers
           '-t',                 # generate 8-bit TIFF
           '-R', 1,              # start random seed at 1
-          '-p', '38x260',       # page size just big enough to hold this target
+          '-p', '38x279.4',     # page size just big enough to hold this target (1.5" x 11")
           '-L',                 # suppress paper clip border
           '-M', 0,              # zero margin
       		dest_dir + sub_name)
@@ -44,8 +45,8 @@ module Quadtone
       end
       final_name = [name, color_class.to_s.split(/::/).last].join('-')
       image_list.write(dest_dir + "#{final_name}.tif")
-      color_class.component_names.each do |component|
-        Pathname.new(dest_dir + "#{name}-#{component}.tif").unlink
+      inks.each do |ink|
+        Pathname.new(dest_dir + "#{name}-#{ink}.tif").unlink
       end
     end
     

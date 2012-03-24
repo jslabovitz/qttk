@@ -71,7 +71,7 @@ module Quadtone
     def read_characterization_curveset!
       samples = []
       @inks.each do |ink|
-        path = Pathname.new("#{CharacterizationName}-#{ink}.ti3")
+        path = Pathname.new("#{@name}-#{ink}.ti3")
         if path.exist?
           if path.mtime > @mtime
             target = Target.from_cgats_file(path)
@@ -87,7 +87,6 @@ module Quadtone
         warn "No samples found"
       else
         @characterization_curveset = CurveSet::QTR.from_samples(samples)
-        @characterization_curveset.print_statistics
       end
     end
     
@@ -95,13 +94,37 @@ module Quadtone
       if linearization_measured_path.exist?
         # if characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime && linearization_measured_path.mtime > @mtime
           @linearization_curveset = CurveSet::Grayscale.from_samples(Target.from_cgats_file(linearization_measured_path).samples)
-          @linearization_curveset.print_statistics
         # else
           # warn "Ignoring out of date linearization file: #{linearization_measured_path}"
         # end
       end
     end
-            
+    
+    def measure(options={})
+      spot = options[:spot] || false
+      @inks.each_with_index do |ink, i|
+        sub_name = Pathname.new("#{@name}-#{ink}")
+        ti2_path = sub_name.with_extname('.ti2')
+        ti3_path = sub_name.with_extname('.ti3')
+        if !ti3_path.exist? || ti3_path.mtime < ti2_path.mtime
+          puts; puts "Ready to read #{sub_name} in strip mode ('p' for patch, 'q' to skip): "
+          case STDIN.gets.chomp
+          when 'p'
+            spot = true
+          when 'q'
+            next
+          end
+        	run('chartread',
+        	  (i > 0) ? '-N' : nil,   # disable auto calibration unless first time through
+        	  spot ? '-p' : nil,      # measure by spot if specified, otherwise by strip
+        	  '-n',                   # don't save spectral info
+        	  '-l',                   # save L*a*b rather than XYZ
+        	  '-H',                   # use high resolution spectrum mode
+        	  sub_name)
+    	  end
+      end
+    end
+    
     def save!
       profile_path.open('w') { |fh| YAML::dump(self, fh) }
     end
@@ -110,20 +133,12 @@ module Quadtone
       Pathname.new("#{ProfileName}.yaml")
     end
     
-    def characterization_reference_path
-      Pathname.new("#{CharacterizationName}.reference.txt")
-    end
-    
-    def characterization_measured_path
-      Pathname.new("#{CharacterizationName}.measured.txt")
-    end
-    
-    def linearization_reference_path
-      Pathname.new("#{LinearizationName}.reference.txt")
+    def characterization_measured_path(ink)
+      Pathname.new("#{@name}-#{ink}.measured.txt")
     end
     
     def linearization_measured_path
-      Pathname.new("#{CharacterizationName}-G.ti3")
+      Pathname.new("#{@name}-G.ti3")
     end
     
     def qtr_profile_path
@@ -134,17 +149,17 @@ module Quadtone
       Pathname.new('/Library/Printers/QTR/quadtone') + @printer + "#{@name}.quad"
     end
     
-    def build_targets(options={})
-      build_characterization_target(options)
-      build_linearization_target(options)
+    def build_targets
+      build_characterization_target
+      build_linearization_target
     end
     
-    def build_characterization_target(options={})
-      Target.build(@name, Color::QTR)
+    def build_characterization_target
+      Target.build(@name, @inks, Color::QTR)
     end
     
-    def build_linearization_target(options={})
-      Target.build(@name, Color::Gray)
+    def build_linearization_target
+      Target.build(@name, [:G], Color::Gray)
     end
     
     def qtr_profile(io)
@@ -247,19 +262,32 @@ module Quadtone
           html.title("Profile: #{@name}")
         end
         html.body do
-          html.title("Profile: #{@name}")
-          html.div do
-            html.div do
-              if @characterization_curveset
-                html.h2("Characterization curves")
-                html << @characterization_curveset.to_svg
+          html.h1("Profile: #{@name}")
+          html.ul do
+            html.li("Printer: #{@printer}")
+            html.li("Printer options:")
+            html.ul do
+              @printer_options.each do |key, value|
+                html.li("#{key}: #{value}")
               end
             end
-            html.div do
-              if @linearization_curveset
-                html.h2("Linearization curve")
-                html << @linearization_curveset.to_svg
-              end
+            html.li("Inks: #{@inks.join(', ')}")
+            html.li("Last modification time: #{@mtime}")
+          end
+          html.div do
+            html.h2("Characterization curves")
+            if @characterization_curveset
+              html << @characterization_curveset.to_html
+            else
+              html.text('(Not defined)')
+            end
+          end
+          html.div do
+            html.h2("Linearization curves")
+            if @linearization_curveset
+              html << @linearization_curveset.to_html
+            else
+              html.text('(Not defined)')
             end
           end
         end
