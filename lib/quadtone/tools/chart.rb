@@ -6,11 +6,14 @@ module Quadtone
   class ChartTool < Tool
     
     attr_accessor :open
+    attr_accessor :quick_look
     
     def parse_option(option, args)
       case option
       when '--open', '-o'
         @open = true
+      when '--quicklook', '-q'
+        @quicklook = true
       end
     end
     
@@ -20,6 +23,7 @@ module Quadtone
       html_path.open('w') { |io| io.write(profile.to_html) }
       ;;puts "Saved HTML to #{html_path}"
       system 'open', html_path if @open
+      system 'qlmanage', '-p', html_path if @quicklook
     end
   
   end
