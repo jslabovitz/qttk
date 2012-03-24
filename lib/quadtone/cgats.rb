@@ -3,7 +3,7 @@ module Quadtone
   class CGATS
   
     ColumnLabels = ('A' .. 'ZZ').to_a
-  
+    
     attr_accessor :header
     attr_accessor :data
     attr_accessor :data_fields
@@ -84,7 +84,7 @@ module Quadtone
   
     def write(io)
       # header
-      @header.each { |k, v| io.puts "#{k}\t#{v}" }
+      @header.each { |k, v| io.puts k.to_s + (v ? " \"#{v}\"" : '') }
       # data format
       io.puts "NUMBER_OF_FIELDS #{@data_fields.length}"
       io.puts 'BEGIN_DATA_FORMAT'
