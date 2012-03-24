@@ -83,7 +83,9 @@ module Color
     end
     
     def to_cgats
-      to_rgb
+      to_rgb.map do |n| 
+        "%.3f" % (n / 255.0 * 100)
+      end
     end
     
     def inspect
