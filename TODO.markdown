@@ -16,6 +16,9 @@
     - Dithering mode ("Ordered")
   - Save *all* printer options to profile (again) so they can be shown/verified.
   - Save curves to profile so they are only generated once (when profiled).
+  - Make all Color classes have component/value structure.
+    - Rename 'channel' to 'component'.
+    - Remove need for explicit knowledge of class (eg, in Profile#read_samples!: "case sample.input ... when Color::QTR").
 
 - Improve target generation:
   - Replace current system with Argyll front-end:
