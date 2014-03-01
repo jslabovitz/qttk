@@ -11,8 +11,8 @@ module Quadtone
         color_map.pixel_interpolation_method = Magick::IntegerInterpolatePixel
   		  color_map.view(0, 0, curve.num_samples, 1) do |view|
       		curve.samples.each do |sample|
-      		  col = 255 - (sample.input.value * (curve.num_samples - 1)).to_i
-            v = 65535 - (sample.output.value * 65535).to_i
+      		  col = 255 - (sample.input * (curve.num_samples - 1)).to_i
+            v = 65535 - (sample.output * 65535).to_i
             view[0][col] = Magick::Pixel.new(v, v, v)
       		end
     		end

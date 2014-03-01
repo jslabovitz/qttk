@@ -31,6 +31,11 @@ module Color
 =end
     
     ComponentNames = %w{LLK LK LM LC Y M C K}.map { |ch| sym = ch.to_sym; const_set(ch, sym); sym }
+    RedChannelMap = Hash[
+      ComponentNames.map { |c|
+        [(255 - (1 << ComponentNames.index(c))), c]
+      }
+    ]
     
     attr_accessor :channel
     
@@ -38,18 +43,13 @@ module Color
       ComponentNames
     end
     
-    def self.from_rgb(r, g, b)
-      channel = ComponentNames.index(ComponentNames.find { |c| r == 255 - (1 << ComponentNames.index(c)) })
-      value = (255 - g) / 255.0
-      new(channel, value)
-    end
-    
     def self.cgats_fields
-      %w{RGB_R RGB_G RGB_B}
+      %w{QTR_CHANNEL QTR_VALUE}
     end
     
-    def self.from_cgats(r, g, b)
-      from_rgb(r, g, b)
+    def self.from_cgats(set)
+      channel, value = set.values_at(*cgats_fields)
+      new(channel, value / 100.0)
     end
     
     def initialize(channel, value)
@@ -75,21 +75,25 @@ module Color
     end
     
     def to_rgb
-      [
-        255 - (1 << @channel),
-        (255 - (255 * value)).to_i,
-        255
-      ]
+      Color::RGB.new(
+        (255 - (1 << @channel)) / 255.0,
+        1 - value, 
+        1)
+    end
+    
+    def to_pixel
+      Magick::Pixel.new(*to_rgb.to_a.map { |n| n * Magick::QuantumRange })
     end
     
     def to_cgats
-      to_rgb.map do |n| 
-        "%.3f" % (n / 255.0 * 100)
-      end
+      {
+        'QTR_CHANNEL' => channel_name,
+        'QTR_VALUE' => value * 100,
+      }
     end
     
     def inspect
-      "<%s: %.2f>" % [@channel, value * 100]
+      "<%s: %3d%%>" % [channel_name, value * 100]
     end
     
   end

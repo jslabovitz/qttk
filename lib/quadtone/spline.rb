@@ -3,21 +3,25 @@
 # try http://www.geometrictools.com/LibMathematics/Interpolation/Interpolation.html
 
 class Spline
-  
+
   class Point < Struct.new(:x, :y); end
-  
+
   def initialize(points)
 
     raise "Must be at least 2 points to make spline" unless points.length >= 2
 
     @in_points = points
     @num_in_points = points.length
-    
+
     # Check that pairs are entered in order of increasing x-value
     1.upto(@num_in_points - 1).each do |i|
+      ;;if !@in_points[i].x.kind_of?(Numeric)
+        ;;pp([@in_points[i], @in_points[i-1]])
+        raise
+      ;;end
       raise "The data pairs have NOT been entered in order of increasing x-value" if @in_points[i].x <= @in_points[i - 1].x
     end
-  
+
     # Differences between the x-values are now stored in a[. . .], starting with a[1]
     # Divided differences between y-values are stored in b[. . .], starting with b[1]
     # Note that a[0] and b[0] are not filled in this loop they are presently left unassigned
@@ -25,7 +29,7 @@ class Spline
     a = []
     b = []
     @dVec = []        # Array of derivatives at each of the xi points
-    
+
     j = 1
     0.upto(@num_in_points - 2).each do |i|
      a[j] = @in_points[j].x - @in_points[i].x
@@ -82,9 +86,9 @@ class Spline
   end
 
   def interpolate(x)
-    
+
     out_points = [x].map { |x| Point.new(x, nil) }
-    
+
     # Begin PCHEV
 
     # Main loop. Go through and calculate interpolant at each out_points value
@@ -137,7 +141,7 @@ class Spline
         c3t3 = c3 + c3 + c3
 
         # Evaluation loop
-      
+
         0.upto(nj - 1). each do |j|
           dummy = out_points[jfirst + j].x - @in_points[ir - 1].x
           out_points[jfirst + j].y = @in_points[ir - 1].y + dummy * (@dVec[ir - 1] + dummy * (c2 + dummy * c3))
@@ -145,7 +149,7 @@ class Spline
           n1 += 1 if dummy > xma
           # Note the redundancy: if either condition is true, other is false
         end
-            
+
         # End CHFDV
 
         # ========================================================
@@ -164,7 +168,7 @@ class Spline
           k = j #Reset k. This will be the first new jfirst
 
         	# Now find out how far to back up in the xi array
-        
+
           while j < ir
         	  break if out_points[k].x < @in_points[j].x
         	  j += 1
@@ -189,22 +193,22 @@ class Spline
     end
 
     # End PCHEV
-    
+
     out_points.first
   end
- 
+
 end
 
 if $0 == __FILE__
-  
+
   require 'pp'
-  
+
   points = [
-    [0.5, 0.25], 
-    [1.0, 1.0], 
-    [2.0, 4.0], 
-    [3.0, 9.0], 
-    [4.0, 16.0], 
+    [0.5, 0.25],
+    [1.0, 1.0],
+    [2.0, 4.0],
+    [3.0, 9.0],
+    [4.0, 16.0],
     [5.0, 25.0],
   ]
 
@@ -215,5 +219,5 @@ if $0 == __FILE__
   [1.5, 2.5, 10].each do |x|
     ;;pp({x => spline.interpolate(x)})
   end
-  
+
 end

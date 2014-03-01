@@ -19,7 +19,7 @@ module Color
     end
     
     def inspect
-      "<DeviceN: %s>" % [@components.map { |c| "%3d" % (c*100) }].join(' ')
+      "<DeviceN: %s>" % [@components.map { |c| "%3d%%" % (c * 100) }].join(',')
     end
     
   end

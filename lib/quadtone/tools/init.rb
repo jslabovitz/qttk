@@ -8,6 +8,7 @@ module Quadtone
     attr_accessor :name
     attr_accessor :printer
     attr_accessor :resolution
+    attr_accessor :inks
     
     def initialize
       #FIXME: Use cupsffi
@@ -20,6 +21,8 @@ module Quadtone
         @printer = args.shift
       when '--resolution', '-r'
         @resolution = args.shift
+      when '--inks', '-i'
+        @inks = args.shift
       end
     end
   
@@ -30,7 +33,8 @@ module Quadtone
       profile = Profile.new(
         :name => name,
         :printer => @printer,
-        :printer_options => printer_options)
+        :printer_options => printer_options,
+        :inks => @inks ? @inks.split(/,/).map { |ink| ink.to_sym } : nil)
       profile.save!
       ;;warn "Created profile #{profile.name.inspect}"
       profile.build_targets

@@ -4,9 +4,10 @@ require 'yaml'
 
 # gems
 require 'pathname3'
-require 'rmagick'
+require 'rvg/rvg'     # loads 'rmagick'
 require 'builder'
 require 'cupsffi'
+require 'hashstruct'
 
 # ours
 require 'quadtone/cgats'
@@ -15,6 +16,8 @@ require 'quadtone/color/device_n'
 require 'quadtone/color/gray'
 require 'quadtone/color/lab'
 require 'quadtone/color/qtr'
+require 'quadtone/color/rgb'
+require 'quadtone/color/xyz'
 require 'quadtone/curve'
 require 'quadtone/curve_set'
 require 'quadtone/descendants'

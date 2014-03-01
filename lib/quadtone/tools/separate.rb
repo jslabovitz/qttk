@@ -29,7 +29,7 @@ module Quadtone
       end
 
       profile = Profile.from_dir(@profile_dir)
-      quad = CurveSet::QuadFile.from_quad_file(profile.quad_file_path)
+      quad = CurveSet.from_quad_file(profile.quad_file_path)
       separator = Separator.new(quad)
       separated_image = separator.separate(image)
       if montage

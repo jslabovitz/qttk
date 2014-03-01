@@ -4,20 +4,17 @@ module Color
     
     include Math
     
-    def self.from_lab(l, a, b)
-      new((100 - l) / 100.0, a, b)
+    def self.component_names
+      [:value, :a, :b]
     end
     
     def self.cgats_fields
       %w{LAB_L LAB_A LAB_B}
     end
     
-    def self.from_cgats(l, a, b)
-      from_lab(l, a, b)
-    end
-    
-    def self.component_names
-      [:value, :a, :b]
+    def self.from_cgats(set)
+      l, a, b = set.values_at(*cgats_fields)
+      new((100 - l) / 100.0, a, b)
     end
     
     def initialize(value, a=0, b=0)
@@ -103,80 +100,38 @@ module Color
       end
     end
     
+    REF_X =  95.047     # Observer= 2°, Illuminant= D65
+    REF_Y = 100.000
+    REF_Z = 108.883
+    
     def to_xyz
       # after http://www.easyrgb.com/index.php?X=MATH&H=08#text8
       
       y = (l + 16) / 116
       x = a / 500 + y
       z = y - b / 200
-
-      if y**3 > 0.008856
-        y = y**3
-      else
-        y = (y - 16 / 116) / 7.787
+      
+      x0, y0, z0 = [x, y, z].map do |n|
+        if (n3 = n**3) > 0.008856
+          n = n3
+        else
+          n = (n - 16 / 116) / 7.787
+        end
       end
       
-      if x**3 > 0.008856
-        x = x**3
-      else
-        x = (x - 16 / 116) / 7.787
-      end
+      x0 = (x * REF_X) / 100
+      y0 = (y * REF_Y) / 100
+      z0 = (z * REF_Z) / 100
       
-      if z**3 > 0.008856
-        z = z**3
-      else
-        z = (z - 16 / 116) / 7.787
-      end
-      
-      ref_x =  95.047     # Observer= 2°, Illuminant= D65
-      ref_y = 100.000
-      ref_z = 108.883
-      
-      x *= ref_x
-      y *= ref_y
-      z *= ref_z
-      
-      [x, y, z]
+      Color::XYZ.new(x0, y0, z0)
     end
     
     def to_rgb
-      x, y, z = to_xyz
-      
-      x /= 100.0        # X from 0 to  95.047      (Observer = 2°, Illuminant = D65)
-      y /= 100.0        # Y from 0 to 100.000
-      z /= 100.0        # Z from 0 to 108.883
-
-      r = x *  3.2406 + y * -1.5372 + z * -0.4986
-      g = x * -0.9689 + y *  1.8758 + z *  0.0415
-      b = x *  0.0557 + y * -0.2040 + z *  1.0570
-
-      if r > 0.0031308
-        r = 1.055 * (r ** (1 / 2.4)) - 0.055
-      else
-        r = 12.92 * r
-      end
-      
-      if g > 0.0031308
-        g = 1.055 * (g ** (1 / 2.4)) - 0.055
-      else
-        g = 12.92 * g
-      end
-      
-      if b > 0.0031308
-        b = 1.055 * (b ** (1 / 2.4)) - 0.055
-      else
-        b = 12.92 * b
-      end
-
-      r = (r * 255).to_i
-      g = (g * 255).to_i
-      b = (b * 255).to_i
-      
-      [r, g, b]
+      to_xyz.to_rgb
     end
     
     def inspect
-      "<Lab: L=%.2f, a=%.2f, b=%.2f>" % [l, a, b]
+      "<Lab: L=%3.2f, a=%.2f, b=%.2f>" % [l, a, b]
     end
     
   end

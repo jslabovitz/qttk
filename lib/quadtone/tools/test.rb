@@ -27,8 +27,8 @@ module Quadtone
       # 
       # wait_for_file(test_grayscale_measured_path, "print & measure target #{grayscale_reference_path} -- save data to #{test_grayscale_measured_path}")
       # 
-      # test_grayscale_measured_target = Target.from_cgats_file(test_grayscale_measured_path)
-      # test_grayscale_measured_curveset = CurveSet::Grayscale.from_samples(test_grayscale_measured_target.samples)
+      # test_grayscale_measured_target = Target.from_ti3_file(test_grayscale_measured_path)
+      # test_grayscale_measured_curveset = CurveSet.from_samples(test_grayscale_measured_target.samples)
       # test_grayscale_measured_curveset.write_svg_file(test_grayscale_measured_path.with_extname('.svg'))
 
       #FIXME: See above

@@ -4,8 +4,9 @@ include Quadtone
 module Quadtone
   
   class MeasureTool < Tool
-  
-    attr_accessor :spot
+    
+    attr_accessor :characterization
+    attr_accessor :linearization
     
     def initialize
       super
@@ -13,14 +14,19 @@ module Quadtone
     
     def parse_option(option, args)
       case option
-      when '--spot', '-s'
-        @spot = true
+      when '--characterization', '-c'
+        @characterization = true
+      when '--linearization', '-l'
+        @linearization = true
       end
     end
     
     def run(*image_files)
       profile = Profile.from_dir(@profile_dir)
-      profile.measure(:spot => @spot)
+      options = {}
+      options[:characterization] = true if @characterization
+      options[:linearization] = true if @linearization
+      profile.measure_targets(options)
     end
     
   end

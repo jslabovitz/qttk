@@ -8,7 +8,8 @@ module Quadtone
     attr_accessor :inks
     attr_accessor :characterization_curveset
     attr_accessor :linearization_curveset
-    attr_accessor :default_ink_limit
+    attr_accessor :default_limit
+    attr_accessor :limits
     attr_accessor :gray_highlight
     attr_accessor :gray_shadow
     attr_accessor :gray_overlap
@@ -31,13 +32,33 @@ module Quadtone
     def initialize(params={})
       @mtime = Time.now
       @printer_options = {}
-      @default_ink_limit = 1
+      @default_limit = 1
       @gray_highlight = 6
       @gray_shadow = 6
       @gray_overlap = 10
       @gray_gamma = 1
       params.each { |key, value| method("#{key}=").call(value) }
       setup
+    end
+    
+    def profile_path
+      Pathname.new("#{ProfileName}.yaml")
+    end
+    
+    def characterization_ti3_path
+      Pathname.new("#{CharacterizationName}.ti3")
+    end
+    
+    def linearization_ti3_path
+      Pathname.new("#{LinearizationName}.ti3")
+    end
+    
+    def qtr_profile_path
+      Pathname.new(@name + '.txt')
+    end
+    
+    def quad_file_path
+      Pathname.new('/Library/Printers/QTR/quadtone') + @printer + "#{@name}.quad"
     end
     
     def setup
@@ -52,76 +73,37 @@ module Quadtone
           warn "Printer does not support option: #{option_name.inspect}"
         end
       end
-      # FIXME: It would be nice to get this path programmatically.
-      ppd_file = Pathname.new("/etc/cups/ppd/#{@printer}.ppd")
-      ink_description = ppd_file.readlines.find { |l| l =~ /^\*%Inks\s*(.*?)\s*$/ } or raise "Can't find inks description for printer #{@printer.inspect}"
-      @inks = ink_description.chomp.split(/\s+/, 2).last.split(/,/).map { |ink| ink.to_sym }
-      read_curvesets!
+      unless @inks
+        # FIXME: It would be nice to get this path programmatically.
+        ppd_file = Pathname.new("/etc/cups/ppd/#{@printer}.ppd")
+        ink_description = ppd_file.readlines.find { |l| l =~ /^\*%Inks\s*(.*?)\s*$/ } or raise "Can't find inks description for printer #{@printer.inspect}"
+        @inks = ink_description.chomp.split(/\s+/, 2).last.split(/,/).map { |ink| ink.to_sym }
+      end
+      read_characterization_curveset!
+      read_linearization_curveset!
     end
     
     def to_yaml_properties
       super - [:@characterization_curveset, :@linearization_curveset, :@ppd]
     end
-    
-    def read_curvesets!
-      read_characterization_curveset!
-      read_linearization_curveset!
-    end
-    
+        
     def read_characterization_curveset!
-      samples = []
-      @inks.each do |ink|
-        path = Pathname.new("#{@name}-#{ink}.ti3")
-        if path.exist?
-          if path.mtime > @mtime
-            target = Target.from_cgats_file(path)
-            new_samples = target.samples.each { |s| s.input = Color::QTR.new(ink, s.input.value) }
-            warn "#{new_samples.length} measurements found for ink #{ink.inspect}"
-            samples += new_samples
-          else
-            warn "Ignoring out of date characterization file: #{path.to_s.inspect}"
-          end
-        end
-      end
-      if samples.empty?
-        warn "No samples found"
+      if characterization_ti3_path.exist?
+        @characterization_curveset = CurveSet.from_ti3_file(characterization_ti3_path, Color::QTR)
       else
-        @characterization_curveset = CurveSet::QTR.from_samples(samples)
+        warn "No characterization file: #{characterization_ti3_path}"
       end
     end
     
     def read_linearization_curveset!
-      if linearization_measured_path.exist?
-        # if characterization_measured_path.exist? && linearization_measured_path.mtime > characterization_measured_path.mtime && linearization_measured_path.mtime > @mtime
-          @linearization_curveset = CurveSet::Grayscale.from_samples(Target.from_cgats_file(linearization_measured_path).samples)
-        # else
-          # warn "Ignoring out of date linearization file: #{linearization_measured_path}"
-        # end
-      end
-    end
-    
-    def measure(options={})
-      spot = options[:spot] || false
-      @inks.each_with_index do |ink, i|
-        sub_name = Pathname.new("#{@name}-#{ink}")
-        ti2_path = sub_name.with_extname('.ti2')
-        ti3_path = sub_name.with_extname('.ti3')
-        if !ti3_path.exist? || ti3_path.mtime < ti2_path.mtime
-          puts; puts "Ready to read #{sub_name} in strip mode ('p' for patch, 'q' to skip): "
-          case STDIN.gets.chomp
-          when 'p'
-            spot = true
-          when 'q'
-            next
-          end
-        	run('chartread',
-        	  (i > 0) ? '-N' : nil,   # disable auto calibration unless first time through
-        	  spot ? '-p' : nil,      # measure by spot if specified, otherwise by strip
-        	  '-n',                   # don't save spectral info
-        	  '-l',                   # save L*a*b rather than XYZ
-        	  '-H',                   # use high resolution spectrum mode
-        	  sub_name)
-    	  end
+      if linearization_ti3_path.exist?
+        if characterization_ti3_path.exist? && linearization_ti3_path.mtime > characterization_ti3_path.mtime && linearization_ti3_path.mtime > @mtime
+          @linearization_curveset = CurveSet.from_ti3_file(linearization_ti3_path, Color::Gray)
+        else
+          warn "Ignoring outdated linearization file: #{linearization_ti3_path}"
+        end
+      else
+        warn "No linearization file: #{linearization_ti3_path}"
       end
     end
     
@@ -129,37 +111,22 @@ module Quadtone
       profile_path.open('w') { |fh| YAML::dump(self, fh) }
     end
     
-    def profile_path
-      Pathname.new("#{ProfileName}.yaml")
+    def initial_characterization_curveset
+      CurveSet.new(:color_class => Color::QTR, :channels => @inks, :limits => @limits)
     end
     
-    def characterization_measured_path(ink)
-      Pathname.new("#{@name}-#{ink}.measured.txt")
-    end
-    
-    def linearization_measured_path
-      Pathname.new("#{@name}-G.ti3")
-    end
-    
-    def qtr_profile_path
-      Pathname.new(@name + '.txt')
-    end
-    
-    def quad_file_path
-      Pathname.new('/Library/Printers/QTR/quadtone') + @printer + "#{@name}.quad"
+    def initial_linearization_curveset
+      CurveSet.new(:color_class => Color::Gray)
     end
     
     def build_targets
-      build_characterization_target
-      build_linearization_target
+      initial_characterization_curveset.build_target(CharacterizationName)
+      initial_linearization_curveset.build_target(LinearizationName)
     end
     
-    def build_characterization_target
-      Target.build(@name, @inks, Color::QTR)
-    end
-    
-    def build_linearization_target
-      Target.build(@name, [:G], Color::Gray)
+    def measure_targets(options)
+      initial_characterization_curveset.measure_target(CharacterizationName) if options[:characterization]
+      initial_linearization_curveset.measure_target(LinearizationName) if options[:linearization]
     end
     
     def qtr_profile(io)
@@ -173,9 +140,9 @@ module Quadtone
       io.puts "N_OF_INKS=#{@characterization_curveset.num_channels}"
       io.puts
       
-      io.puts "DEFAULT_INK_LIMIT=#{@default_ink_limit * 100}"
+      io.puts "DEFAULT_INK_LIMIT=#{@default_limit * 100}"
       @characterization_curveset.curves.each do |curve|
-        io.puts "LIMIT_#{curve.key}=#{curve.ink_limit.input.value * 100}"
+        io.puts "LIMIT_#{curve.key}=#{curve.limit.input * 100}"
       end
       io.puts
       
@@ -185,7 +152,7 @@ module Quadtone
       @characterization_curveset.separations.each_with_index do |separation, i|
         channel, input = *separation
         io.puts "GRAY_INK_#{i+1}=#{channel}"
-        io.puts "GRAY_VAL_#{i+1}=#{input.value * 100}"
+        io.puts "GRAY_VAL_#{i+1}=#{input * 100}"
         io.puts
       end
       
@@ -198,7 +165,10 @@ module Quadtone
       if @linearization_curveset
         curve = @linearization_curveset.curves.first
         samples = curve.interpolated_samples(21)
-        io.puts "LINEARIZE=\"#{samples.map { |p| p.output.l }.join(' ')}\""
+        samples.each_with_index do |sample, i|
+          raise "Linearization not monotonically increasing" if i > 0 && i < samples[i - 1]
+        end
+        io.puts "LINEARIZE=\"#{samples.map { |s| s.output * 100 }.join(' ')}\""
       end
     end
     

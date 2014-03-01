@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.author      = 'John Labovitz'
   s.email       = 'johnl@johnlabovitz.com'
   s.homepage    = 'http://github.com/jslabovitz/qttk'
-  # s.rubyforge_project = 'typograph'
+  # s.rubyforge_project = 'qttk'
   s.summary     = %q{Tools for working with the quadtone printing process}
   s.description = %q{
     Quadtone Toolkit (QTTK): Tools for working with the quadtone printing process.
@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'pathname3'
   s.add_dependency 'rmagick'
   s.add_dependency 'cupsffi'
+  s.add_dependency 'hashstruct'
   
   # s.add_development_dependency 'minitest'
   # s.add_development_dependency 'wrong'
