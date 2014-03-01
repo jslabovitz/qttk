@@ -14,13 +14,13 @@ At some point, given sufficient interest and motivation, I may write a graphical
 QTTK enables you to:
 
   - Generate profiling targets to be printed and analyzed.  Many parameters can be set, including paper size, color mode (either QTR calibration or grayscale), ink channels, ink limits, and patch oversampling rates.  In addition to an image file (TIFF), a reference data file is also generated, which can be used by MeasureTool or other color profiling systems.
-  
+
   - Analyze measurements of printed reference targets.  Individual ink channels are detected, as well as tonal response curves, maximum-density points, and other data.  Grayscale ink separations can be easily calculated, as well as linearization curves for grayscale targets.
-  
+
   - Create visual charts and graphs of analyzed information, including response curves and density scales.
-  
+
   - Build and install QTR profiles, based on measured data, avoiding complex and error-prone manual calculations.
-  
+
   - Preview how images will print through particular QTR profiles, actually separating a grayscale image into the ink channels as represented in the the QTR curve files.
 
 QTTK intentionally makes few assumptions about equipment and materials. This allows for flexibility, as well as dealing with 'worst case' scenarios. Say you've obtained an old printer with a broken magenta channel, and a yellow channel that refuses to unclog. You've mixed your own inks by hand (using, say, Paul Roark's C6 base; see below for details) at some approximate dilutions. And you are using an exotic paper, not even designed for inkjet. QTTK's tools will allow you to make that a workable scenario.
@@ -31,62 +31,62 @@ QTTK intentionally makes few assumptions about equipment and materials. This all
 The development of these tools came out of a over a decade's work with the quadtone process, and a great deal of thinking about how these tools fit into the printmaking process.  From my experience, I came up with a short list of guiding principles (inspired by Christopher Alexander's *Pattern Language*) to serve as a basis for developing this software.
 
   - Make tools, not products: Any craftsman has a set of tools which are optimized for specific uses, yet work together to solve a wide variety of problems. Having access to the right tools allows the printmaker to attain the same results as prepackaged, point-and-click software, or to indeed rise above those results. Therefore, design a decent set of tools that can be used in many ways. Further, design tools so they can be augmented or modified as needed.
-  
+
   - Encourage understanding of process: Much of the modern digital printing process is hidden beneath layers of abstraction and automation. This often denies the possibility of understanding how things really work. True craftsmanship relies on an understanding of materials, processes, and tools. Therefore, as much as possible, show the workings of the process, so they can be both understood and expanded.
-  
+
   - Apply scientific principles: Most digital printmakers use materials and equipment that are extraordinarily accurate (printers, computers, ink, paper), with results that are repeatable and measurable. Yet existing printmaking tools either discourage measurement at all (presuming that all situations are identical) or go about it using repetitive, error-prone manual methods. Therefore, encourage measurement and analysis (along with understanding of that analysis) at all points of the process.
-  
+
   - Allow craft & expressiveness: Art lies partly in vision, and partly in process. An artist must be able to work symbiotically with a process, experimenting with materials and observing reactions, and adjusting to those observations. A process that discourages experimentation or adjustments, or whose tedium results in an artist giving up on experimentation, will result in poorer art. Therefore, provide tools for experimentation, measurement, analysis, and production which encourage the highest level of craft.
 
 
 ## Example usage
 
 There is a single binary command installed, called **qt**.  This binary has several subcommands, referred to here as 'tools'.  Here are a few examples:
-    
+
     # Add a new printer
     qt add-printer Quad4000-C6
-    
+
     # Examine the printer's options
-    qt printer-options --printer Quad4000-C6
-    
+    qt printer-options
+
     # Make a directory for a new profile
     mkdir GenericMatte
     cd GenericMatte
-    
+
     # Initialize a new profile for a given printer, specific inks, and a particular resolution
     qt init --printer Quad4000-C6 --inks K,C,M,LC,LM,Y --resolution XXX
-    
+
     # Create characterization and linearization target files (both data & images)
     qt target
-    
+
     # Print the characterization target
     qt print --calibrate characterization.reference.tif
-    
+
     # Measure the printed characterization target
     # (measure using MeasureTool, save as 'characterization.measured.txt')
-    
+
     # Characterize the profile based on the measured data; also install as QTR curve
     qt profile
 
     # Print the linearization target
     qt print linearization.reference.tif
-    
+
     # Measure the printed linearization target
     # (measure using MeasureTool, save as 'linearization.measured.txt')
-    
+
     # Generate SVG chart for measured linearization target (open with SVG-aware browser)
     qt chart linearization.measured.txt
-    
+
     # Generate SVG charts for profile (both characterization & linearization) (open with SVG-aware browser)
     qt chart
-    
+
     # Read image.jpg and create grayscale channel separations, based on existing curve (outputs montaged separations to image.tif)
     qt separate /Library/Printers/QTR/quadtone/Quad4000-C6/GenericMatte.quad --montage image.jpg
-    
+
     ##FIXME: document other tools:
     #   render
     #   test
-  
+
 
 ## Printing a target
 
