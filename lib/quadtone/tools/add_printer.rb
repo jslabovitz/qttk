@@ -4,7 +4,7 @@ include Quadtone
 module Quadtone
 
   class AddPrinterTool < Tool
-    
+
     def run(printer)
       unless %x{lpstat -v #{printer} 2>/dev/null}.empty?
         raise ToolUsageError, "Printer #{printer.inspect} already exists"
@@ -13,11 +13,11 @@ module Quadtone
       curves_dir          = Pathname.new('/Library/Printers/QTR/quadtone') + printer
       cups_data_dir       = Pathname.new(%x{cups-config --datadir}.chomp)
       cups_serverbin_dir  = Pathname.new(%x{cups-config --serverbin}.chomp)
-    
+
       model = printer.split(/[-_=]/).first
       model_ppd = "C/#{model}.ppd.gz"
       ppd_file = cups_data_dir + 'model' + model_ppd
-    
+
       raise "QuadToneRIP does not support printer model #{model.inspect}" unless ppd_file.exist?
 
       uri = loc = nil
@@ -34,12 +34,12 @@ module Quadtone
       if uri.nil?
         loop do
           print "Enter IP address of IPP printer, or <return> to cancel: "
-          ipp = STDIN.chomp
-          if ipp =~ /^$/ 
+          ipp = STDIN.gets.chomp
+          if ipp =~ /^$/
             warn "Install cancelled."
             exit 1
           end
-          if ipp =~ /^\d+\.\d+\.\d+\.\d+$/ 
+          if ipp =~ /^\d+\.\d+\.\d+\.\d+$/
             uri = "lpd://#{ipp}"
             loc = "Network Printer IPP = #{ipp}"
             break
@@ -50,7 +50,7 @@ module Quadtone
 
       warn "Creating printer #{printer.inspect}"
       system('lpadmin',
-        '-p', printer, 
+        '-p', printer,
         '-E',
         '-m', model_ppd,
         '-L', loc,
@@ -59,7 +59,7 @@ module Quadtone
 
       curves_dir.mkpath
     end
-  
+
   end
-  
+
 end
