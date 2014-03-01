@@ -10,11 +10,6 @@ module Quadtone
     attr_accessor :resolution
     attr_accessor :inks
 
-    def initialize
-      #FIXME: Use cupsffi
-      @printer = `lpstat -d`.chomp.sub(/system default destination: /, '')
-    end
-
     def parse_option(option, args)
       case option
       when '--printer'
@@ -27,14 +22,16 @@ module Quadtone
     end
 
     def run(name=nil)
-      name = Pathname.new('.').realpath.basename
+      raise "Must specify printer" unless @printer
+      raise "Must specify profile directory" unless @profile_dir
+      name = @profile_dir.basename
       printer_options = {}
       printer_options.merge!('Resolution' => @resolution) if @resolution
       profile = Profile.new(
         :name => name,
         :printer => @printer,
         :printer_options => printer_options,
-        :inks => @inks ? @inks.split(/,/).map { |ink| ink.to_sym } : nil)
+        :inks => @inks ? @inks.split(/,/).map(&:to_sym) : nil)
       profile.save!
       ;;warn "Created profile #{profile.name.inspect}"
       profile.build_targets
