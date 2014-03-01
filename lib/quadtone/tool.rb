@@ -25,7 +25,7 @@ module Quadtone
 
     def parse_global_option(option, args)
       case option
-      when '--profile-dir', '-p'
+      when '--profile-dir'
         dir = args.shift or raise "Must specify profile directory"
         @profile_dir = Pathname.new(dir)
       when '--no-install'
