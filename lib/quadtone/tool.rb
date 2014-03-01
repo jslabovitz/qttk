@@ -1,12 +1,12 @@
 module Quadtone
-  
+
   class ToolUsageError < Exception; end
 
   class Tool
-    
+
     attr_accessor :profile_dir
     attr_accessor :no_install
-    
+
     def self.process_args(args, tools)
       begin
         name = args.shift or raise ToolUsageError, "No subcommand specified"
@@ -22,7 +22,7 @@ module Quadtone
         exit 1
       end
     end
-    
+
     def parse_global_option(option, args)
       case option
       when '--profile-dir', '-p'
@@ -32,15 +32,19 @@ module Quadtone
         @no_install = true
       end
     end
-    
+
+    def parse_option(option, args)
+      # overridden by subclass
+    end
+
     def initialize
       @profile_dir = Pathname.new('.')
     end
-    
+
     def run(args)
       raise UnimplementedMethod, "Tool #{self.class} does not implement \#run"
     end
-  
+
     def wait_for_file(path, prompt)
       until path.exist?
         STDERR.puts
@@ -49,7 +53,7 @@ module Quadtone
         STDIN.gets
       end
     end
-    
+
   end
-  
+
 end
