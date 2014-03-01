@@ -1,0 +1,29 @@
+PATH
+  remote: .
+  specs:
+    qttk (0.1.0)
+      builder
+      cupsffi
+      ffi
+      hashstruct
+      pathname3
+      rmagick
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    builder (3.2.2)
+    cupsffi (0.1.1)
+      ffi
+    ffi (1.9.3)
+    hashstruct (1.0.0)
+    pathname3 (1.2.5)
+    rake (10.1.1)
+    rmagick (2.13.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  qttk!
+  rake
