@@ -2,30 +2,30 @@ require 'quadtone'
 include Quadtone
 
 module Quadtone
-  
+
   class InitTool < Tool
-    
+
     attr_accessor :name
     attr_accessor :printer
     attr_accessor :resolution
     attr_accessor :inks
-    
+
     def initialize
       #FIXME: Use cupsffi
       @printer = `lpstat -d`.chomp.sub(/system default destination: /, '')
     end
-    
+
     def parse_option(option, args)
       case option
-      when '--printer', '-p'
+      when '--printer'
         @printer = args.shift
-      when '--resolution', '-r'
+      when '--resolution'
         @resolution = args.shift
-      when '--inks', '-i'
+      when '--inks'
         @inks = args.shift
       end
     end
-  
+
     def run(name=nil)
       name = Pathname.new('.').realpath.basename
       printer_options = {}
@@ -39,7 +39,7 @@ module Quadtone
       ;;warn "Created profile #{profile.name.inspect}"
       profile.build_targets
     end
-  
+
   end
-  
+
 end
