@@ -22,7 +22,7 @@ module Quadtone
 
     def initialize(params={})
       params.each { |key, value| method("#{key}=").call(value) }
-      @channels ||= @color_class.component_names if @color_class
+      @channels ||= @color_class.component_names
       @curves = []
       @paper = nil
       @limits = {}
@@ -213,7 +213,7 @@ module Quadtone
     end
 
     def separations
-      curves = @curves.sort_by { |c| c.limit.output }.reverse
+      curves = @curves.sort_by { |c| c.limit ? c.limit.output : 1 }.reverse
       darkest_curve = curves.shift
       separations = { darkest_curve.key => darkest_curve.samples.last.input }
       separations

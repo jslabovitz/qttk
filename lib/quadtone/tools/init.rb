@@ -5,34 +5,26 @@ module Quadtone
 
   class InitTool < Tool
 
-    attr_accessor :name
-    attr_accessor :profile
     attr_accessor :printer
     attr_accessor :resolution
-    attr_accessor :inks
 
     def parse_option(option, args)
       case option
-      when '--profile'
-        @profile = Profile.new(name: args.shift)
       when '--printer'
         @printer = Printer.new(args.shift)
       when '--resolution'
         @resolution = args.shift.to_i
-      when '--inks'
-        @inks = args.shift.split(/,/).map(&:to_sym)
       end
     end
 
     def run(*args)
-      raise ToolUsageError, "Must specify profile" unless @profile
+      name = args.shift or raise ToolUsageError, "Must specify profile name"
       raise ToolUsageError, "Must specify printer" unless @printer
-      @profile.printer = @printer
-      @profile.printer_options['Resolution'] = @resolution if @resolution
-      @profile.inks = @inks if @inks
-      @profile.save!
-      ;;warn "Created profile #{@profile.name.inspect}"
-      @profile.build_targets
+      profile = Profile.new(name: name, printer: @printer)
+      profile.setup_default_inks
+      profile.printer_options['Resolution'] = @resolution if @resolution
+      profile.save
+      ;;warn "Created profile #{profile.name.inspect}"
     end
 
   end
