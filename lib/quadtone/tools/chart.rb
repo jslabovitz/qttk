@@ -5,11 +5,14 @@ module Quadtone
 
   class ChartTool < Tool
 
+    attr_accessor :profile
     attr_accessor :open
     attr_accessor :quick_look
 
     def parse_option(option, args)
       case option
+      when '--profile'
+        @profile = Profile.load(args.shift)
       when '--open'
         @open = true
       when '--quicklook'
@@ -18,12 +21,11 @@ module Quadtone
     end
 
     def run
-      profile = Profile.from_dir(@profile_dir)
-      html_path = Pathname.new('profile.html')
-      html_path.open('w') { |io| io.write(profile.to_html) }
+      html_path = @profile.html_path
+      html_path.open('w') { |io| io.write(@profile.to_html) }
       ;;puts "Saved HTML to #{html_path}"
       system 'open', html_path if @open
-      system 'qlmanage', '-p', html_path if @quicklook
+      system 'qlmanage', '-p', html_path if @quick_look
     end
 
   end

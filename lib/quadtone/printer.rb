@@ -7,7 +7,8 @@ module Quadtone
 
     def initialize(name)
       @name = name
-      @ppd = CupsPPD.new(@name, nil)
+      @cups_ppd = CupsPPD.new(@name, nil)
+      @cups_printer = CupsPrinter.new(@name)
     end
 
     def inks
@@ -18,8 +19,8 @@ module Quadtone
     end
 
     def page_size(name=nil)
-      name ||= @ppd.attribute('DefaultPageSize').first[:value]
-      size = @ppd.page_size(name)
+      name ||= @cups_ppd.attribute('DefaultPageSize').first[:value]
+      size = @cups_ppd.page_size(name)
       size[:imageable_width] = (size[:margin][:right] - size[:margin][:left]).pt
       size[:imageable_height] = (size[:margin][:top] - size[:margin][:bottom]).pt
       size
@@ -27,7 +28,7 @@ module Quadtone
 
     def print_printer_attributes
       puts "Attributes:"
-      @ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
+      @cups_ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
         puts "\t" + "%25s: %s%s" % [
           attribute[:name],
           attribute[:value].inspect,
@@ -38,7 +39,7 @@ module Quadtone
 
     def print_printer_options
       puts "Options:"
-      @ppd.options.sort_by { |o| o[:keyword] }.each do |option|
+      @cups_ppd.options.sort_by { |o| o[:keyword] }.each do |option|
         puts "\t" + "%25s: %s [%s]" % [
           option[:keyword],
           option[:default_choice].inspect,
@@ -54,7 +55,7 @@ module Quadtone
       options.each do |key, value|
         warn "\t" + "%10s: %s" % [key, value.inspect]
       end
-      CupsPrinter.new(@name).print_file(image_path, options)
+      @cups_printer.print_file(image_path, options)
     end
 
   end

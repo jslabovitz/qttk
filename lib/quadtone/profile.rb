@@ -20,11 +20,12 @@ module Quadtone
     CharacterizationName = 'characterization'
     LinearizationName = 'linearization'
     ImportantPrinterOptions = %w{MediaType Resolution ripSpeed stpDither}
+    ProfileDir = Pathname.new(ENV['HOME']) + '.qttk'
 
-    def self.from_dir(dir)
-      file = Pathname.new(dir) + "#{ProfileName}.yaml"
-      profile = YAML::load(file.open.read)
-      profile.mtime = file.mtime
+    def self.load(name)
+      profile_path = ProfileDir + name
+      profile = YAML::load(profile_path.open.read)
+      profile.mtime = profile_path.mtime
       profile.setup
       profile
     end
@@ -46,19 +47,19 @@ module Quadtone
     end
 
     def profile_path
-      Pathname.new("#{ProfileName}.yaml")
+      ProfileDir + @name + "#{ProfileName}.yaml"
     end
 
     def characterization_ti3_path
-      Pathname.new("#{CharacterizationName}.ti3")
+      ProfileDir + @name + "#{CharacterizationName}.ti3"
     end
 
     def linearization_ti3_path
-      Pathname.new("#{LinearizationName}.ti3")
+      ProfileDir + @name + "#{LinearizationName}.ti3"
     end
 
     def qtr_profile_path
-      Pathname.new(@name + '.txt')
+      ProfileDir + @name + "#{@name}.txt"
     end
 
     def quad_file_path
@@ -106,15 +107,15 @@ module Quadtone
     end
 
     def save!
-      profile_path.open('w') { |fh| YAML::dump(self, fh) }
+     profile_path.open('w') { |fh| YAML::dump(self, fh) }
     end
 
     def initial_characterization_curveset
-      CurveSet.new(:color_class => Color::QTR, :channels => @inks, :limits => @limits)
+      CurveSet.new(color_class: Color::QTR, channels: @inks, limits: @limits)
     end
 
     def initial_linearization_curveset
-      CurveSet.new(:color_class => Color::Gray)
+      CurveSet.new(color_class: Color::Gray)
     end
 
     def build_targets
@@ -186,7 +187,7 @@ module Quadtone
     end
 
     def to_html
-      html = Builder::XmlMarkup.new(:indent => 2)
+      html = Builder::XmlMarkup.new(indent: 2)
       html.declare!(:DOCTYPE, :html)
       html.html do
         html.head do

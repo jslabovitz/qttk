@@ -2,14 +2,22 @@ require 'quadtone'
 include Quadtone
 
 module Quadtone
-  
+
   class TargetTool < Tool
-    
-    def run
-      profile = Profile.from_dir(@profile_dir)
-      profile.build_targets
+
+    attr_accessor :profile
+
+    def parse_option(option, args)
+      case option
+      when '--profile'
+        @profile = Profile.load(args.shift)
+      end
     end
-  
+
+    def run
+      @profile.build_targets
+    end
+
   end
-  
+
 end

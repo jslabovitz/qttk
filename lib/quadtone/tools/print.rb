@@ -15,6 +15,8 @@ module Quadtone
 
     def parse_option(option, args)
       case option
+      when '--profile'
+        @profile = Profile.load(args.shift)
       when '--calibrate'
         @calibrate = true
       when '--option', '--options'
@@ -27,11 +29,8 @@ module Quadtone
     end
 
     def run(*args)
-      profile = Profile.from_dir(@profile_dir)
-      options = @options.dup
-      options['ColorModel'] = @calibrate ? 'QTCAL' : 'QTRIP16'
       args.map { |p| Pathname.new(p) }.each do |image_path|
-        profile.print_image(image_path, options)
+        @profile.print_image(image_path, @options.merge('ColorModel' => @calibrate ? 'QTCAL' : 'QTRIP16'))
       end
     end
 

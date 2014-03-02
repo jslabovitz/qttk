@@ -4,8 +4,6 @@ module Quadtone
 
   class Tool
 
-    attr_accessor :profile_dir
-
     def self.process_args(args, tools)
       begin
         name = args.shift or raise ToolUsageError, "No subcommand specified"
@@ -23,11 +21,10 @@ module Quadtone
     end
 
     def parse_global_option(option, args)
-      case option
-      when '--profile-dir'
-        dir = args.shift or raise ToolUsageError, "Must specify profile directory"
-        @profile_dir = Pathname.new(dir)
-      end
+      # case option
+      # when '--profile'
+      #   @profile_name = args.shift or raise ToolUsageError, "Must specify profile name"
+      # end
     end
 
     def parse_option(option, args)

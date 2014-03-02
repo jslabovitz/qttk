@@ -5,10 +5,13 @@ module Quadtone
 
   class PrinterOptionsTool < Tool
 
+    attr_accessor :profile
     attr_accessor :printer
 
     def parse_option(option, args)
       case option
+      when '--profile'
+        @profile = Profile.load(args.shift)
       when '--printer'
         @printer = Printer.new(args.shift)
       end
@@ -17,9 +20,8 @@ module Quadtone
     def run(*args)
       if @printer
         printer = @printer
-      elsif @profile_dir
-        profile = Profile.from_dir(@profile_dir)
-        printer = profile.printer
+      elsif @profile
+        printer = @profile.printer
       else
         raise ToolUsageError, "Must specify either printer or profile"
       end

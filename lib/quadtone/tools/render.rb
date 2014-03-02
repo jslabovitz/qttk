@@ -5,6 +5,7 @@ module Quadtone
 
   class RenderTool < Tool
 
+    attr_accessor :profile
     attr_accessor :gamma
     attr_accessor :compress
     attr_accessor :page_size
@@ -19,6 +20,8 @@ module Quadtone
 
     def parse_option(option, args)
       case option
+      when '--profile'
+        @profile = Profile.load(args.shift)
       when '--gamma'
         @gamma = args.shift.to_f
       when '--no-compress'
@@ -30,15 +33,14 @@ module Quadtone
         @resolution = args.shift.to_i
       when '--size'
         size = args.shift.split('x')
-        @desired_size = { :width => size[0].to_f.in, :height => size[1].to_f.in }
+        @desired_size = { width: size[0].to_f.in, height: size[1].to_f.in }
       end
     end
 
     def run(*args)
-      profile = Profile.from_dir(@profile_dir)
-      page_size = profile.printer.page_size(@page_size)
+      page_size = @profile.printer.page_size(@page_size)
 
-      @desired_size ||= { :width => page_size[:imageable_width], :height => page_size[:imageable_height] }
+      @desired_size ||= { width: page_size[:imageable_width], height: page_size[:imageable_height] }
 
       if @desired_size[:width] > page_size[:imageable_width] || desired_size[:height] > page_size[:imageable_height]
         raise "Image too large for page size (#{page_size[:name]})"
