@@ -21,7 +21,7 @@ module Quadtone
     LinearizationName = 'linearization'
     ImportantPrinterOptions = %w{MediaType Resolution ripSpeed stpDither}
 
-    def self.from_dir(dir='.')
+    def self.from_dir(dir)
       file = Pathname.new(dir) + "#{ProfileName}.yaml"
       profile = YAML::load(file.open.read)
       profile.mtime = file.mtime
@@ -41,6 +41,10 @@ module Quadtone
       setup
     end
 
+    def printer=(name)
+      @printer = Printer.new(name)
+    end
+
     def profile_path
       Pathname.new("#{ProfileName}.yaml")
     end
@@ -58,13 +62,12 @@ module Quadtone
     end
 
     def quad_file_path
-      Pathname.new('/Library/Printers/QTR/quadtone') + @printer + "#{@name}.quad"
+      Pathname.new('/Library/Printers/QTR/quadtone') + @printer.name + "#{@name}.quad"
     end
 
     def setup
       raise "No printer specified" unless @printer
-      @ppd = CupsPPD.new(@printer.dup, nil)
-      ppd_options = @ppd.options
+      ppd_options = @printer.ppd.options
       ImportantPrinterOptions.each do |option_name|
         option = ppd_options.find { |o| o[:keyword] == option_name }
         if option
@@ -73,18 +76,13 @@ module Quadtone
           warn "Printer does not support option: #{option_name.inspect}"
         end
       end
-      unless @inks
-        # FIXME: It would be nice to get this path programmatically.
-        ppd_file = Pathname.new("/etc/cups/ppd/#{@printer}.ppd")
-        ink_description = ppd_file.readlines.find { |l| l =~ /^\*%Inks\s*(.*?)\s*$/ } or raise "Can't find inks description for printer #{@printer.inspect}"
-        @inks = ink_description.chomp.split(/\s+/, 2).last.split(/,/).map { |ink| ink.to_sym }
-      end
+      @inks ||= @printer.inks
       read_characterization_curveset!
       read_linearization_curveset!
     end
 
     def to_yaml_properties
-      super - [:@characterization_curveset, :@linearization_curveset, :@ppd]
+      super - [:@characterization_curveset, :@linearization_curveset, :@printer]
     end
 
     def read_characterization_curveset!
@@ -133,7 +131,7 @@ module Quadtone
 
       raise "No characterization is set" unless @characterization_curveset
 
-      io.puts "PRINTER=#{@printer}"
+      io.puts "PRINTER=#{@printer.name}"
       io.puts "GRAPH_CURVE=NO"
       io.puts
 
@@ -182,46 +180,9 @@ module Quadtone
     end
 
     def print_image(image_path, options={})
-      printer = CupsPrinter.new(@printer.dup)
       options['ripCurve1'] = @name if options['ColorModel'] != 'QTCAL'
       options.merge!(@printer_options)
-      warn "Printing:"
-      warn "\t" + image_path
-      warn "Options:"
-      options.each do |key, value|
-        warn "\t" + "%10s: %s" % [key, value.inspect]
-      end
-      printer.print_file(image_path, options)
-    end
-
-    def page_size(name=nil)
-      name ||= @ppd.attribute('DefaultPageSize').first[:value]
-      size = @ppd.page_size(name)
-      size[:imageable_width] = (size[:margin][:right] - size[:margin][:left]).pt
-      size[:imageable_height] = (size[:margin][:top] - size[:margin][:bottom]).pt
-      size
-    end
-
-    def print_printer_attributes
-      puts "Attributes:"
-      @ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
-        puts "\t" + "%25s: %s%s" % [
-          attribute[:name],
-          attribute[:value].inspect,
-          attribute[:spec].empty? ? '' : " [#{attribute[:spec].inspect}]"
-        ]
-      end
-    end
-
-    def print_printer_options
-      puts "Options:"
-      @ppd.options.sort_by { |o| o[:keyword] }.each do |option|
-        puts "\t" + "%25s: %s [%s]" % [
-          option[:keyword],
-          option[:default_choice].inspect,
-          (option[:choices].map { |o| o[:choice] } - [option[:default_choice]]).map { |o| o.inspect }.join(', ')
-        ]
-      end
+      @printer.print_file(image_path, options)
     end
 
     def to_html
@@ -234,7 +195,7 @@ module Quadtone
         html.body do
           html.h1("Profile: #{@name}")
           html.ul do
-            html.li("Printer: #{@printer}")
+            html.li("Printer: #{@printer.name}")
             html.li("Printer options:")
             html.ul do
               @printer_options.each do |key, value|

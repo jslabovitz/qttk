@@ -22,8 +22,8 @@ module Quadtone
     end
 
     def run(name=nil)
-      raise "Must specify printer" unless @printer
-      raise "Must specify profile directory" unless @profile_dir
+      raise ToolUsageError, "Must specify printer" unless @printer
+      raise ToolUsageError, "Must specify profile directory" unless @profile_dir
       name = @profile_dir.basename
       printer_options = {}
       printer_options.merge!('Resolution' => @resolution) if @resolution

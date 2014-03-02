@@ -5,7 +5,6 @@ module Quadtone
   class Tool
 
     attr_accessor :profile_dir
-    attr_accessor :no_install
 
     def self.process_args(args, tools)
       begin
@@ -26,32 +25,13 @@ module Quadtone
     def parse_global_option(option, args)
       case option
       when '--profile-dir'
-        dir = args.shift or raise "Must specify profile directory"
+        dir = args.shift or raise ToolUsageError, "Must specify profile directory"
         @profile_dir = Pathname.new(dir)
-      when '--no-install'
-        @no_install = true
       end
     end
 
     def parse_option(option, args)
       # overridden by subclass
-    end
-
-    def initialize
-      @profile_dir = Pathname.new('.')
-    end
-
-    def run(args)
-      raise UnimplementedMethod, "Tool #{self.class} does not implement \#run"
-    end
-
-    def wait_for_file(path, prompt)
-      until path.exist?
-        STDERR.puts
-        STDERR.puts "[waiting for #{path}]"
-        STDERR.print "#{prompt} [press return] "
-        STDIN.gets
-      end
     end
 
   end

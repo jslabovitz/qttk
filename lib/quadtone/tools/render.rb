@@ -36,7 +36,7 @@ module Quadtone
 
     def run(*image_files)
       profile = Profile.from_dir(@profile_dir)
-      page_size = profile.page_size(@page_size)
+      page_size = profile.printer.page_size(@page_size)
 
       @desired_size ||= { :width => page_size[:imageable_width], :height => page_size[:imageable_height] }
 

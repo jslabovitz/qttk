@@ -6,6 +6,9 @@ module Quadtone
   class AddPrinterTool < Tool
 
     def run(printer)
+
+      #FIXME: move this into Printer class
+
       unless %x{lpstat -v #{printer} 2>/dev/null}.empty?
         raise ToolUsageError, "Printer #{printer.inspect} already exists"
       end
