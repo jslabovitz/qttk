@@ -25,7 +25,6 @@ module Quadtone
     end
 
     def run(*args)
-      ;;pp self
       raise ToolUsageError, "Must specify profile" unless @profile
       raise ToolUsageError, "Must specify printer" unless @printer
       @profile.printer = @printer

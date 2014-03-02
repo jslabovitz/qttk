@@ -23,9 +23,10 @@ module Quadtone
     ProfileDir = Pathname.new(ENV['HOME']) + '.qttk'
 
     def self.load(name)
-      profile_path = ProfileDir + name
+      profile_path = ProfileDir + name + "#{ProfileName}.yaml"
       profile = YAML::load(profile_path.open.read)
       profile.mtime = profile_path.mtime
+      profile.printer = Printer.new(profile.printer.name)
       profile.setup
       profile
     end
@@ -39,27 +40,40 @@ module Quadtone
       @gray_overlap = 10
       @gray_gamma = 1
       params.each { |key, value| method("#{key}=").call(value) }
-      setup
     end
 
-    def printer=(name)
-      @printer = Printer.new(name)
+    def create
+      dir_path.mkpath
+    end
+
+    def printer=(printer)
+      case printer
+      when Printer, nil
+        @printer = printer
+      else
+        @printer = Printer.new(printer)
+      end
+      @inks ||= @printer.inks if @printer
+    end
+
+    def dir_path
+      ProfileDir + @name
     end
 
     def profile_path
-      ProfileDir + @name + "#{ProfileName}.yaml"
+      dir_path + "#{ProfileName}.yaml"
     end
 
     def characterization_ti3_path
-      ProfileDir + @name + "#{CharacterizationName}.ti3"
+      dir_path + "#{CharacterizationName}.ti3"
     end
 
     def linearization_ti3_path
-      ProfileDir + @name + "#{LinearizationName}.ti3"
+      dir_path + "#{LinearizationName}.ti3"
     end
 
     def qtr_profile_path
-      ProfileDir + @name + "#{@name}.txt"
+      dir_path + "#{@name}.txt"
     end
 
     def quad_file_path
@@ -68,22 +82,20 @@ module Quadtone
 
     def setup
       raise "No printer specified" unless @printer
-      ppd_options = @printer.ppd.options
       ImportantPrinterOptions.each do |option_name|
-        option = ppd_options.find { |o| o[:keyword] == option_name }
+        option = @printer.options.find { |o| o[:keyword] == option_name }
         if option
           @printer_options[option[:keyword]] ||= option[:default_choice]
         else
           warn "Printer does not support option: #{option_name.inspect}"
         end
       end
-      @inks ||= @printer.inks
       read_characterization_curveset!
       read_linearization_curveset!
     end
 
     def to_yaml_properties
-      super - [:@characterization_curveset, :@linearization_curveset, :@printer]
+      super - [:@characterization_curveset, :@linearization_curveset]
     end
 
     def read_characterization_curveset!
@@ -107,7 +119,8 @@ module Quadtone
     end
 
     def save!
-     profile_path.open('w') { |fh| YAML::dump(self, fh) }
+      profile_path.dirname.mkpath
+      profile_path.open('w') { |fh| YAML::dump(self, fh) }
     end
 
     def initial_characterization_curveset
@@ -181,9 +194,10 @@ module Quadtone
     end
 
     def print_image(image_path, options={})
-      options['ripCurve1'] = @name if options['ColorModel'] != 'QTCAL'
-      options.merge!(@printer_options)
-      @printer.print_file(image_path, options)
+      if options['ColorModel'] != 'QTCAL'
+        options = options.merge('ripCurve1' => @name)
+      end
+      @printer.print_file(image_path, @printer_options.merge(options))
     end
 
     def to_html

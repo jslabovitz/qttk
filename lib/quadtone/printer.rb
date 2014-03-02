@@ -3,11 +3,12 @@ module Quadtone
   class Printer
 
     attr_accessor :name
-    attr_accessor :ppd
+    attr_accessor :options
 
     def initialize(name)
       @name = name
       @cups_ppd = CupsPPD.new(@name, nil)
+      @options = @cups_ppd.options
       @cups_printer = CupsPrinter.new(@name)
     end
 
