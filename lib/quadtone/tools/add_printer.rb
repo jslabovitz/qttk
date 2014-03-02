@@ -38,9 +38,9 @@ module Quadtone
         loop do
           print "Enter IP address of IPP printer, or <return> to cancel: "
           ipp = STDIN.gets.chomp
-          if ipp =~ /^$/
+          if ipp.empty?
             warn "Install cancelled."
-            exit 1
+            return
           end
           if ipp =~ /^\d+\.\d+\.\d+\.\d+$/
             uri = "lpd://#{ipp}"
