@@ -217,7 +217,7 @@ if $0 == __FILE__
   ;;pp spline
 
   [1.5, 2.5, 10].each do |x|
-    ;;pp({x => spline.interpolate(x)})
+    ;;pp({x: spline.interpolate(x)})
   end
 
 end
