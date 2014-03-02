@@ -21,7 +21,7 @@ module Quadtone
       end
     end
 
-    def run(*image_files)
+    def run(*args)
       profile = Profile.from_dir(@profile_dir)
       options = {}
       options[:characterization] = true if @characterization

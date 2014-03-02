@@ -26,11 +26,11 @@ module Quadtone
       end
     end
 
-    def run(*image_files)
+    def run(*args)
       profile = Profile.from_dir(@profile_dir)
       options = @options.dup
       options['ColorModel'] = @calibrate ? 'QTCAL' : 'QTRIP16'
-      image_files.map { |p| Pathname.new(p) }.each do |image_path|
+      args.map { |p| Pathname.new(p) }.each do |image_path|
         profile.print_image(image_path, options)
       end
     end

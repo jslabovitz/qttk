@@ -14,7 +14,7 @@ module Quadtone
       end
     end
 
-    def run(*image_files)
+    def run(*args)
       if @printer
         printer = @printer
       elsif @profile_dir

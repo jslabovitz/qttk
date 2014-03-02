@@ -34,7 +34,7 @@ module Quadtone
       end
     end
 
-    def run(*image_files)
+    def run(*args)
       profile = Profile.from_dir(@profile_dir)
       page_size = profile.printer.page_size(@page_size)
 
@@ -64,7 +64,7 @@ module Quadtone
 
       # Render provided files
 
-      image_files.map { |p| Pathname.new(p) }.each do |input_path|
+      args.map { |p| Pathname.new(p) }.each do |input_path|
 
         # Read from input file
         ;;warn "#{input_path}:"
