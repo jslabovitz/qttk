@@ -9,13 +9,13 @@ module Quadtone
     attr_accessor :paper
 
     def self.from_quad_file(quad_file)
-      curve_set = new(:color_class => Color::QTR)
+      curve_set = new(color_class: Color::QTR)
       curve_set.read_quad_file!(quad_file)
       curve_set
     end
 
     def self.from_ti3_file(ti3_file, color_class)
-      curve_set = new(:color_class => color_class)
+      curve_set = new(color_class: color_class)
       curve_set.read_ti3_file!(ti3_file)
       curve_set
     end
@@ -179,9 +179,9 @@ module Quadtone
     end
 
     ChannelAliases = {
-      'c' => :LC,
-      'm' => :LM,
-      'k' => :LK,
+      c: :LC,
+      m: :LM,
+      k: :LK,
     }
 
     # Read QTR quad (curve) file
@@ -195,7 +195,7 @@ module Quadtone
   		# "## QuadToneRIP K,C,M,Y,LC,LM"
   		# "## QuadToneRIP KCMY"
       channel_list = $1
-      @curves = ($1.split(channel_list =~ /,/ ? ',' : //)).map { |c| ChannelAliases[c] || c.to_sym }.map do |channel|
+      @curves = ($1.split(channel_list =~ /,/ ? ',' : //)).map { |c| ChannelAliases[c.to_sym] || c.to_sym }.map do |channel|
         samples = (0..255).to_a.map do |input|
           lines.shift while lines.first =~ /^#/
           line = lines.shift
@@ -332,14 +332,14 @@ module Quadtone
     end
 
     def to_html
-      html = Builder::XmlMarkup.new(:indent => 2)
+      html = Builder::XmlMarkup.new(indent: 2)
       html << to_svg
       html.ul do
         html.li("Channels: #{@channels.join(', ')}")
         html.li("Paper: #{paper_value.inspect}")
       end
       html.h3('Curve set:')
-      html.table(:border => 1) do
+      html.table(border: 1) do
         html.tr do
           [
             'key',
@@ -372,20 +372,20 @@ module Quadtone
 
     def to_svg(options={})
       size = options[:size] || 500
-      svg = Builder::XmlMarkup.new(:indent => 2)
-      svg.svg(:xmlns => 'http://www.w3.org/2000/svg', :version => '1.1') do
-        svg.g(:width => size, :height => size) do
-          svg.g(:stroke => 'blue') do
-            svg.rect(:x => 0, :y => 0, :width => size, :height => size, :fill => 'none', :'stroke-width' => 1)
-            svg.line(:x1 => 0, :y1 => size, :x2 => size, :y2 => 0, :'stroke-width' => 0.5)
+      svg = Builder::XmlMarkup.new(indent: 2)
+      svg.svg(xmlns: 'http://www.w3.org/2000/svg', version: '1.1') do
+        svg.g(width: size, height: size) do
+          svg.g(stroke: 'blue') do
+            svg.rect(x: 0, y: 0, width: size, height: size, fill: 'none', :'stroke-width' => 1)
+            svg.line(x1: 0, y1: size, x2: size, y2: 0, :'stroke-width' => 0.5)
           end
           @curves.each do |curve|
 
             # draw individual samples
             curve.samples.each do |sample|
-              svg.circle(:cx => size * sample.input, :cy => size * (1 - sample.output), :r => 2, :stroke => 'none', :fill => "rgb(#{Color::Gray.new(sample.output).to_rgb.to_a.join(',')})")
+              svg.circle(cx: size * sample.input, cy: size * (1 - sample.output), r: 2, stroke: 'none', fill: "rgb(#{Color::Gray.new(sample.output).to_rgb.to_a.join(',')})")
               if sample.error && sample.error > 0.05
-                svg.circle(:cx => size * sample.input, :cy => size * (1 - sample.output), :r => 2 + (sample.error * 10), :stroke => 'red', :fill => 'none')
+                svg.circle(cx: size * sample.input, cy: size * (1 - sample.output), r: 2 + (sample.error * 10), stroke: 'red', fill: 'none')
               end
             end
 
@@ -393,23 +393,23 @@ module Quadtone
             samples = curve.interpolated_samples(size).map do |sample|
               [size * sample.input, size * (1 - sample.output)]
             end
-            svg.g(:fill => 'none', :stroke => 'green', :'stroke-width' => 1) do
-              svg.polyline(:points => samples.map { |pt| pt.join(',') }.join(' '))
+            svg.g(fill: 'none', stroke: 'green', :'stroke-width' => 1) do
+              svg.polyline(points: samples.map { |pt| pt.join(',') }.join(' '))
             end
 
             # draw marker for ink limit (density)
             if (limit = curve.density_limit)
               x, y = size * limit.input, size * (1 - limit.output)
-              svg.g(:stroke => 'black', :'stroke-width' => 2) do
-                svg.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+              svg.g(stroke: 'black', :'stroke-width' => 2) do
+                svg.line(x1: x, y1: y + 8, x2: x, y2: y - 8)
               end
             end
 
             # draw marker for ink limit (delta E)
             if (limit = curve.delta_e_limit)
               x, y = size * limit.input, size * (1 - limit.output)
-              svg.g(:stroke => 'cyan', :'stroke-width' => 2) do
-                svg.line(:x1 => x, :y1 => y + 8, :x2 => x, :y2 => y - 8)
+              svg.g(stroke: 'cyan', :'stroke-width' => 2) do
+                svg.line(x1: x, y1: y + 8, x2: x, y2: y - 8)
               end
             end
           end
