@@ -7,6 +7,7 @@ module Quadtone
 
     attr_accessor :profile
     attr_accessor :printer
+    attr_accessor :show_attributes
 
     def parse_option(option, args)
       case option
@@ -14,6 +15,8 @@ module Quadtone
         @profile = Profile.load(args.shift)
       when '--printer'
         @printer = Printer.new(args.shift)
+      when '--attributes'
+        @show_attributes = true
       end
     end
 
@@ -25,7 +28,7 @@ module Quadtone
       else
         raise ToolUsageError, "Must specify either printer or profile"
       end
-      # printer.print_printer_attributes
+      printer.print_printer_attributes if @show_attributes
       printer.print_printer_options
     end
 

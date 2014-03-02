@@ -4,11 +4,13 @@ module Quadtone
 
     attr_accessor :name
     attr_accessor :options
+    attr_accessor :attributes
 
     def initialize(name)
       @name = name
       @cups_ppd = CupsPPD.new(@name, nil)
-      @options = @cups_ppd.options
+      @options = @cups_ppd.options.map { |o| HashStruct.new(o) }
+      @attributes = @cups_ppd.attributes.map { |a| HashStruct.new(a) }
       @cups_printer = CupsPrinter.new(@name)
     end
 
@@ -29,8 +31,9 @@ module Quadtone
 
     def print_printer_attributes
       puts "Attributes:"
-      @cups_ppd.attributes.sort_by { |a| a[:name] }.each do |attribute|
-        puts "\t" + "%25s: %s%s" % [
+      max_field_length = @attributes.map(&:name).map(&:length).max
+      @attributes.sort_by { |a| a[:name] }.each do |attribute|
+        puts "\t" + "%#{max_field_length}s: %s%s" % [
           attribute[:name],
           attribute[:value].inspect,
           attribute[:spec].empty? ? '' : " [#{attribute[:spec].inspect}]"
@@ -40,8 +43,9 @@ module Quadtone
 
     def print_printer_options
       puts "Options:"
-      @cups_ppd.options.sort_by { |o| o[:keyword] }.each do |option|
-        puts "\t" + "%25s: %s [%s]" % [
+      max_field_length = @options.map(&:keyword).map(&:length).max
+      @options.sort_by { |o| o[:keyword] }.each do |option|
+        puts "\t" + "%#{max_field_length}s: %s [%s]" % [
           option[:keyword],
           option[:default_choice].inspect,
           (option[:choices].map { |o| o[:choice] } - [option[:default_choice]]).map { |o| o.inspect }.join(', ')
