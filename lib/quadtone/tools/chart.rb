@@ -4,14 +4,11 @@ module Quadtone
 
     class Chart < Tool
 
-      attr_accessor :profile
       attr_accessor :open
       attr_accessor :quick_look
 
       def parse_option(option, args)
         case option
-        when '--profile'
-          @profile = Profile.load(args.shift)
         when '--open'
           @open = true
         when '--quicklook'

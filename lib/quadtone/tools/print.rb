@@ -15,8 +15,6 @@ module Quadtone
 
       def parse_option(option, args)
         case option
-        when '--profile'
-          @profile = Profile.load(args.shift)
         when '--calibrate'
           @calibrate = true
         when '--save'

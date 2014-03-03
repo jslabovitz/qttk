@@ -1,12 +1,31 @@
 # TODO
 
-  - store printer options in profile
+  - add 'check' tool to check attributes & values of profile
 
   - better command-line option parsing:
     - tool should just declare attributes, setters
     - options can come at beginning or end
 
   - implement actual subclasses of CurveSet for colors, instead of using @color_class
+
+  - split main 'qt' tool into separate binaries:
+    - qtprofile: manage profiles
+    - qtprinter: manage printers
+    - qtpaper: manage paper types
+    - qtprint: print images
+
+  - save printer info
+    - ID
+    - queue name
+    - default options
+
+  - save paper
+    - ID
+    - manufacturer
+    - source
+    - name
+    - attributes
+    - type (eg, glossy, matte)
 
   - reimplement linearization:
       curve = @linearization.curves.first

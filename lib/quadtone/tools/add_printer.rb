@@ -4,6 +4,10 @@ module Quadtone
 
     class AddPrinter < Tool
 
+      def load_current_profile
+        false
+      end
+
       def run(printer)
 
         #FIXME: move this into Printer class

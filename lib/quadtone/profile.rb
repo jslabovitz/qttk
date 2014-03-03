@@ -16,8 +16,31 @@ module Quadtone
     attr_accessor :gray_gamma
 
     ProfilesDir = BaseDir + 'profiles'
+    CurrentProfilePath = ProfilesDir + 'current'
     ProfileName = 'profile'
-    ImportantPrinterOptions = %w{MediaType Resolution ripSpeed stpDither}
+
+    def self.has_current_profile?
+      CurrentProfilePath.symlink?
+    end
+
+    def self.current_profile_name
+      CurrentProfilePath.readlink.basename.to_s if has_current_profile?
+    end
+
+    def self.make_current_profile(name)
+      profile_path = ProfilesDir + name
+      raise "Profile #{name.inspect} does not exist" unless profile_path.exist?
+      CurrentProfilePath.unlink if CurrentProfilePath.exist?
+      profile_path.symlink(CurrentProfilePath)
+    end
+
+    def self.profile_names
+      Pathname.glob(ProfilesDir + '*').select { |p| !p.symlink? && p.directory? && p[0] != '.' }.map(&:basename)
+    end
+
+    def self.load_current_profile
+      load(current_profile_name)
+    end
 
     def self.load(name)
       profile = Profile.new(name: name)
@@ -91,6 +114,14 @@ module Quadtone
         value = 1 - (i * default_partition)
         @ink_partitions << HashStruct.new(ink: ink, value: value)
       end
+    end
+
+    def current_profile?
+      self.class.has_current_profile? && @name == self.class.current_profile_name
+    end
+
+    def make_current_profile
+      self.class.make_current_profile(@name)
     end
 
     def save

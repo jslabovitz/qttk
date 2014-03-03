@@ -4,14 +4,11 @@ module Quadtone
 
     class Separate < Tool
 
-      attr_accessor :profile
       attr_accessor :montage
       attr_accessor :gradient
 
       def parse_option(option, args)
         case option
-        when '--profile'
-          @profile = Profile.load(args.shift)
         when '--montage'
           @montage = true
         when '--gradient'

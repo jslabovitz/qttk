@@ -4,7 +4,8 @@ module Quadtone
 
   class Tool
 
-    attr_accessor :printer
+    attr_accessor :profile
+    attr_accessor :verbose
 
     def self.process_args(args)
       begin
@@ -13,6 +14,7 @@ module Quadtone
         klass = Kernel.const_get(klass_name) or raise ToolUsageError, "Unknown subcommand specified: #{name.inspect} (#{klass_name})"
         tool = klass.new
         tool.process_environment
+        tool.load_current_profile
         while args.first && args.first[0] == '-'
           option = args.shift
           tool.parse_global_option(option, args) or tool.parse_option(option, args) or raise ToolUsageError, "Unknown option for #{name.inspect} tool: #{option}"
@@ -28,14 +30,21 @@ module Quadtone
     end
 
     def parse_global_option(option, args)
-      # case option
-      # when '--profile'
-      #   @profile_name = args.shift or raise ToolUsageError, "Must specify profile name"
-      # end
+      case option
+      when '--verbose'
+        @verbose = true
+      end
     end
 
     def parse_option(option, args)
       # overridden by subclass
+    end
+
+    # subclass can override this to avoid requirement of current profile
+
+    def load_current_profile
+      raise ToolUsageError, "No current profile" unless Profile.has_current_profile?
+      @profile = Profile.load_current_profile
     end
 
   end

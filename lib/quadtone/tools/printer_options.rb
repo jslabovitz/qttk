@@ -8,10 +8,12 @@ module Quadtone
       attr_accessor :printer
       attr_accessor :show_attributes
 
+      def load_current_profile
+        super if Profile.has_current_profile?
+      end
+
       def parse_option(option, args)
         case option
-        when '--profile'
-          @profile = Profile.load(args.shift)
         when '--printer'
           @printer = Printer.new(args.shift)
         when '--attributes'

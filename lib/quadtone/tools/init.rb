@@ -6,6 +6,10 @@ module Quadtone
 
       attr_accessor :printer
 
+      def load_current_profile
+        false
+      end
+
       def parse_option(option, args)
         case option
         when '--printer'
@@ -19,6 +23,7 @@ module Quadtone
         profile = Profile.new(name: name, printer: @printer)
         profile.setup_defaults
         profile.save
+        profile.make_current_profile
         ;;warn "Created profile #{profile.name.inspect}"
       end
 
