@@ -6,10 +6,11 @@ module Quadtone
 
     attr_accessor :printer
 
-    def self.process_args(args, tools)
+    def self.process_args(args)
       begin
         name = args.shift or raise ToolUsageError, "No subcommand specified"
-        klass = tools[name] or raise ToolUsageError, "Unknown subcommand specified: #{name.inspect}"
+        klass_name = 'Quadtone::Tools::' + name.split('-').map { |p| p.capitalize }.join
+        klass = Kernel.const_get(klass_name) or raise ToolUsageError, "Unknown subcommand specified: #{name.inspect} (#{klass_name})"
         tool = klass.new
         tool.process_environment
         while args.first && args.first[0] == '-'

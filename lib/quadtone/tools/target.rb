@@ -1,21 +1,22 @@
-require 'quadtone'
-include Quadtone
-
 module Quadtone
 
-  class TargetTool < Tool
+  module Tools
 
-    attr_accessor :profile
+    class Target < Tool
 
-    def parse_option(option, args)
-      case option
-      when '--profile'
-        @profile = Profile.load(args.shift)
+      attr_accessor :profile
+
+      def parse_option(option, args)
+        case option
+        when '--profile'
+          @profile = Profile.load(args.shift)
+        end
       end
-    end
 
-    def run
-      @profile.build_targets
+      def run
+        @profile.build_targets
+      end
+
     end
 
   end

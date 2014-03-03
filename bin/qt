@@ -4,16 +4,4 @@ $LOAD_PATH.unshift(File.join(File.realpath(File.dirname($0)), '..', 'lib'))
 
 require 'quadtone'
 
-Quadtone::Tool.process_args(ARGV,
-  'add-printer'   => Quadtone::AddPrinterTool,
-  'chart'         => Quadtone::ChartTool,
-  'init'          => Quadtone::InitTool,
-  'measure'       => Quadtone::MeasureTool,
-  'print'         => Quadtone::PrintTool,
-  'printer-options' => Quadtone::PrinterOptionsTool,
-  'install'       => Quadtone::InstallTool,
-  'render'        => Quadtone::RenderTool,
-  'separate'      => Quadtone::SeparateTool,
-  'target'        => Quadtone::TargetTool,
-  'test'          => Quadtone::TestTool,
-)
+Quadtone::Tool.process_args(ARGV)

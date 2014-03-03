@@ -1,21 +1,22 @@
-require 'quadtone'
-include Quadtone
-
 module Quadtone
 
-  class InstallTool < Tool
+  module Tools
 
-    attr_accessor :profile
+    class Install < Tool
 
-    def parse_global_option(option, args)
-      case option
-      when '--profile'
-        @profile = Profile.load(args.shift)
+      attr_accessor :profile
+
+      def parse_global_option(option, args)
+        case option
+        when '--profile'
+          @profile = Profile.load(args.shift)
+        end
       end
-    end
 
-    def run
-      @profile.install
+      def run
+        @profile.install
+      end
+
     end
 
   end
