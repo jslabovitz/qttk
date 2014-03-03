@@ -16,10 +16,6 @@ module Quadtone
      @spline = Spline.new(points)
     end
 
-    def to_yaml_properties
-      super - [:@spline]
-    end
-
     def [](input)
       @spline.interpolate(input).y
     end

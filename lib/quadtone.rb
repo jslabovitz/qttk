@@ -1,6 +1,5 @@
 # system
 require 'pp'
-require 'yaml'
 
 # gems
 require 'pathname3'
