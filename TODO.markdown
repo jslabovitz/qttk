@@ -1,23 +1,36 @@
 # TODO
 
+  - better command-line option parsing:
+    - tool should just declare attributes, setters
+    - options can come at beginning or end
+
+  - implement actual subclasses of CurveSet for colors, instead of using @color_class
+
+  - reimplement linearization:
+      curve = @linearization.curves.first
+      samples = curve.interpolated_samples(21)
+      samples.each_with_index do |sample, i|
+        raise "Linearization not monotonically increasing" if i > 0 && i < samples[i - 1]
+      end
+
 ***
 
   new process (* = user action)
-    
+
     1. initialize
-      
+
       - get profile name from current directory
       - get printer name from argument, or use default
       - get PPD/etc. for printer
       - get inks for printer
       - modify inks from arguments
-      
+
       % qt init [--printer=Quad-C6] [--inks=-M]
-      
+
     2. characterize
-      
+
       a. print characterization target
-        
+
         - generate characterization target for selected printer's ink channels
           - one curve per channel, value on 0..1 scale
           - one column per channel
@@ -25,21 +38,21 @@
             - solid patch of given value (for spot reading)
             - patch with small rectangle of given value inside larger rectangle of maximum value (like current ink limits chart)
             - solid patch of given value, with thin white lines
-            
+
         - print characterization target
           - in calibration mode
-        
+
         % qt characterize
         % qt print ...
-      
+
       b. user examines printed target
-      
+
         - looks for overall ink quality
         - finds patches with maximum density
         - ignores unneeded channels
-        
+
       c. measure characterization target
-      
+
         - map patch IDs from arguments to patches
         - measure spots (using 'spotread')
         - map patches to per-channel ink-limit value
@@ -48,47 +61,47 @@
         - calculate ink order
         - create curveset for enabled channels
           - apply ink-limits
-        
+
         % qt characterize <patch-1> <patch-2> ...
-    
+
     3. profile
-    
+
       - generate QTR profile
       - install QTR profile
-      
+
     4. linearize (either per channel or composite grayscale)
-      
+
       a. print linearization target
-      
+
         - generate linearization target
           - create curveset for color model
           - if per-channel:
             - apply ink limits
           - generate .tiX files for chartread
           - generate target image
-          
+
         % qt linearize { --raw | --composite> }
         % qt print [--calibrate] <target-file>
-        
-      b. measure linearization target      
-      
+
+      b. measure linearization target
+
     5. test
-    
+
       a. print test target
-      
+
       b. measure test target
-        
+
         - save test results
-    
+
     6. visualize
-    
+
       - ink order, color
       - ink limits
       - overall linearization (color, error)
       - density range
       - QTR curves
       - channel separations for a given image
-    
+
 ***
 
 - Improve profile initialization:
@@ -96,8 +109,8 @@
   - Add initial ink-limit to profile/target.
     - To allow for more accurate results on papers known to be very absorbent.
     - From posting on DigitalBW: "Find the limit of the full black ink by watching for
-      slight puddling and or printing a pattern with some 1 pixel spaced white lines 
-      surrounded by much larger areas of solid black. When the edges of those 1 pixel 
+      slight puddling and or printing a pattern with some 1 pixel spaced white lines
+      surrounded by much larger areas of solid black. When the edges of those 1 pixel
       lines start to get fuzzy, you have too much ink.
   - Allow negation of inks (eg, '-LLK').
   - Find good printer defaults:
@@ -135,7 +148,7 @@
     - Create smoother curves (using bsplines?).
   - Use L* profiling?
     - http://tech.groups.yahoo.com/group/QuadtoneRIP/message/9691
-    
+
 - Improve charting:
   - Optionally normalize curves in charts.
   - Represent a/b for measured (L*a*b) colors.
