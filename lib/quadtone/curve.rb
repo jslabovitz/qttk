@@ -13,7 +13,7 @@ module Quadtone
       @samples = samples.sort_by(&:input)
       @limit = limit
       points = @samples.map { |s| Spline::Point.new(s.input, s.output) }
-     @spline = Spline.new(points)
+      @spline = Spline.new(points)
     end
 
     def [](input)
