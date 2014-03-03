@@ -23,20 +23,31 @@ module Quadtone
 
     def page_size(name=nil)
       name ||= @cups_ppd.attribute('DefaultPageSize').first[:value]
-      size = @cups_ppd.page_size(name)
-      size[:imageable_width] = (size[:margin][:right] - size[:margin][:left]).pt
-      size[:imageable_height] = (size[:margin][:top] - size[:margin][:bottom]).pt
+      size = HashStruct.new(@cups_ppd.page_size(name))
+      # change 'length' to 'height', or else there are problems with Hash#length
+      size[:height] = size.delete(:length)
+      size = HashStruct.new(size)
+      size.imageable_width = (size.margin.right - size.margin.left).pt
+      size.imageable_height = (size.margin.top - size.margin.bottom).pt
       size
+    end
+
+    def default_options
+      Hash[
+        @options.map do |option|
+          [option.keyword, option.default_choice]
+        end
+      ]
     end
 
     def print_printer_attributes
       puts "Attributes:"
       max_field_length = @attributes.map(&:name).map(&:length).max
-      @attributes.sort_by { |a| a[:name] }.each do |attribute|
+      @attributes.sort_by(&:name).each do |attribute|
         puts "\t" + "%#{max_field_length}s: %s%s" % [
-          attribute[:name],
-          attribute[:value].inspect,
-          attribute[:spec].empty? ? '' : " [#{attribute[:spec].inspect}]"
+          attribute.name,
+          attribute.value.inspect,
+          attribute.spec.empty? ? '' : " [#{attribute.spec.inspect}]"
         ]
       end
     end
@@ -44,11 +55,11 @@ module Quadtone
     def print_printer_options
       puts "Options:"
       max_field_length = @options.map(&:keyword).map(&:length).max
-      @options.sort_by { |o| o[:keyword] }.each do |option|
+      @options.sort_by(&:keyword).each do |option|
         puts "\t" + "%#{max_field_length}s: %s [%s]" % [
-          option[:keyword],
-          option[:default_choice].inspect,
-          (option[:choices].map { |o| o[:choice] } - [option[:default_choice]]).map { |o| o.inspect }.join(', ')
+          option.keyword,
+          option.default_choice.inspect,
+          (option.choices.map { |o| o.choice } - [option.default_choice]).map { |o| o.inspect }.join(', ')
         ]
       end
     end

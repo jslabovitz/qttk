@@ -31,6 +31,8 @@ module Quadtone
         case key
         when 'PRINTER'
           profile.printer = value
+        when 'PRINTER_OPTIONS'
+          profile.printer_options = Hash[ value.split(',').map { |o| o.split('=') } ]
         when 'GRAPH_CURVE'
           # ignore
         when 'N_OF_INKS'
@@ -78,7 +80,8 @@ module Quadtone
       params.each { |key, value| send("#{key}=", value) }
     end
 
-    def setup_default_inks
+    def setup_defaults
+      @printer_options = @printer.default_options
       @ink_limits = Hash[
         @printer.inks.map { |ink| [ink, @default_ink_limit] }
       ]
@@ -94,6 +97,7 @@ module Quadtone
       qtr_profile_path.dirname.mkpath
       qtr_profile_path.open('w') do |io|
         io.puts "PRINTER=#{@printer.name}"
+        io.puts "PRINTER_OPTIONS=#{@printer_options.map { |k, v| [k, v].join('=') }.join(',')}"
         io.puts "GRAPH_CURVE=NO"
         io.puts "N_OF_INKS=#{@printer.inks.length}"
         io.puts "DEFAULT_INK_LIMIT=#{@default_ink_limit * 100}"
@@ -132,18 +136,6 @@ module Quadtone
 
     def quad_file_path
       Pathname.new('/Library/Printers/QTR/quadtone') + @printer.name + "#{@name}.quad"
-    end
-
-    def setup
-      raise "No printer specified" unless @printer
-      ImportantPrinterOptions.each do |option_name|
-        option = @printer.options.find { |o| o[:keyword] == option_name }
-        if option
-          @printer_options[option[:keyword]] ||= option[:default_choice]
-        else
-          warn "Printer does not support option: #{option_name.inspect}"
-        end
-      end
     end
 
     def install
