@@ -1,5 +1,7 @@
 # TODO
 
+  - store printer options in profile
+
   - better command-line option parsing:
     - tool should just declare attributes, setters
     - options can come at beginning or end

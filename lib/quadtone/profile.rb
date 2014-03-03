@@ -170,7 +170,21 @@ module Quadtone
         puts "\t" + "#{key}: #{value}"
       end
       puts "Inks: #{@printer.inks.join(', ')}"
-      puts "Last modification time: #{@qtr_profile_path.mtime}"
+      puts "Default ink limit: #{@default_ink_limit}"
+      puts "Gray settings:"
+      puts "\t" + "Highlight: #{@gray_highlight}"
+      puts "\t" + "Shadow: #{@gray_shadow}"
+      puts "\t" + "Overlap: #{@gray_overlap}"
+      puts "Gray gamma: #{@gray_gamma}"
+      puts "Ink limits:"
+      @ink_limits.each do |ink, limit|
+        puts "\t" + "#{ink}: #{limit}"
+      end
+      puts "Ink partitions:"
+      @ink_partitions.each do |ink, partition|
+        puts "\t" + "#{ink}: #{partition.ink}: #{partition.value}"
+      end
+      puts "Linearization: #{@linearization ? @linearization.join(' ') : '(none)'}"
     end
 
   end
