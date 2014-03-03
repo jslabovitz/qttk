@@ -5,11 +5,12 @@ module Quadtone
     class Print < Tool
 
       attr_accessor :calibrate
-      attr_accessor :options
+      attr_accessor :printer_options
+      attr_accessor :save_rendered
 
       def initialize
         super
-        @options = {}
+        @printer_options = {}
       end
 
       def parse_option(option, args)
@@ -18,8 +19,10 @@ module Quadtone
           @profile = Profile.load(args.shift)
         when '--calibrate'
           @calibrate = true
+        when '--save'
+          @save_rendered = true
         when '--option', '--options'
-          @options.merge!(
+          @printer_options.merge!(
             Hash[
               args.shift.split(',').map { |o| o.split('=') }
             ]
@@ -29,7 +32,7 @@ module Quadtone
 
       def run(*args)
         args.map { |p| Pathname.new(p) }.each do |image_path|
-          @profile.print_image(image_path, @options.merge('ColorModel' => @calibrate ? 'QTCAL' : 'QTRIP16'))
+          @profile.print_file(image_path, calibrate: @calibrate, save_rendered: @save_rendered, printer_options: @printer_options)
         end
       end
 

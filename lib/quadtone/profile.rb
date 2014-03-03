@@ -147,11 +147,20 @@ module Quadtone
       tmp_file.unlink
     end
 
-    def print_image(image_path, options={})
-      if options['ColorModel'] != 'QTCAL'
-        options = options.merge('ripCurve1' => @name)
+    def print_file(input_path, options={})
+      options = HashStruct.new(options)
+      printer_options = @printer_options.dup
+      printer_options.merge!(options.printer_options) if options.printer_options
+      if options.calibrate
+        printer_options['ColorModel'] = 'QTCAL'
+      else
+        printer_options['ColorModel'] = 'QTRIP16'
+        printer_options['ripCurve1'] = @name
       end
-      @printer.print_file(image_path, @printer_options.merge(options))
+      renderer = Renderer.new(grayscale: !options.calibrate, page_size: @printer.page_size(printer_options['PageSize']))
+      output_path = renderer.render(input_path)
+      @printer.print_file(output_path, printer_options)
+      output_path.unlink unless options.save_rendered
     end
 
     def show

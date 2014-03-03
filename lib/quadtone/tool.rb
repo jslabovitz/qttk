@@ -15,7 +15,7 @@ module Quadtone
         tool.process_environment
         while args.first && args.first[0] == '-'
           option = args.shift
-          tool.parse_global_option(option, args) or tool.parse_option(option, args) or raise ToolUsageError, "Unknown option: #{option}"
+          tool.parse_global_option(option, args) or tool.parse_option(option, args) or raise ToolUsageError, "Unknown option for #{name.inspect} tool: #{option}"
         end
         tool.run(*args)
       rescue ToolUsageError => e

@@ -64,14 +64,13 @@ module Quadtone
       end
     end
 
-    def print_file(image_path, options)
-      warn "Printing:"
-      warn "\t" + image_path
+    def print_file(path, options)
+      warn "Printing #{path}"
       warn "Options:"
       options.each do |key, value|
-        warn "\t" + "%10s: %s" % [key, value.inspect]
+        warn "\t" + "%10s: %s" % [key, value]
       end
-      @cups_printer.print_file(image_path, options)
+      @cups_printer.print_file(path, options)
     end
 
   end
