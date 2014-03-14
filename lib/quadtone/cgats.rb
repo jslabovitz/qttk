@@ -1,9 +1,9 @@
 module Quadtone
-  
+
   class CGATS
-  
+
     attr_accessor :sections
-    
+
     def self.new_from_file(file)
       cgats = new
       section_index = 0
@@ -66,16 +66,16 @@ module Quadtone
       end
       cgats
     end
-  
+
     def initialize
       @sections = []
     end
-    
+
     def add_section
       @sections << Section.new
       @sections[-1]
     end
-    
+
     def write(io)
       @sections.each do |section|
         section.write(io)
@@ -83,9 +83,9 @@ module Quadtone
       end
       nil
     end
-    
+
     class Section
-      
+
       attr_accessor :header
       attr_accessor :data
       attr_accessor :data_fields
@@ -95,7 +95,7 @@ module Quadtone
         @data = []
         @data_fields = []
       end
-      
+
       def <<(set)
         @data << set
       end
@@ -117,7 +117,7 @@ module Quadtone
           fields = @data_fields.map do |f|
             case (d = set[f])
             when Float
-              d
+              '%.05f' % d
             when String
               '"' + d + '"'
             else
@@ -131,7 +131,7 @@ module Quadtone
       end
 
     end
-  
+
   end
-  
+
 end

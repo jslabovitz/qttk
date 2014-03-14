@@ -11,7 +11,12 @@ module Quadtone
       begin
         name = args.shift or raise ToolUsageError, "No subcommand specified"
         klass_name = 'Quadtone::Tools::' + name.split('-').map { |p| p.capitalize }.join
-        klass = Kernel.const_get(klass_name) or raise ToolUsageError, "Unknown subcommand specified: #{name.inspect} (#{klass_name})"
+        begin
+          klass = Kernel.const_get(klass_name)
+          raise NameError unless klass.respond_to?(:process_args)
+        rescue NameError => e
+          raise ToolUsageError, "Unknown subcommand specified: #{name.inspect} (#{klass_name})"
+        end
         tool = klass.new
         tool.process_environment
         tool.load_current_profile

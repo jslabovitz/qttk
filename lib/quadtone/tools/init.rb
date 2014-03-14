@@ -21,7 +21,6 @@ module Quadtone
         name = args.shift or raise ToolUsageError, "Must specify profile name"
         raise ToolUsageError, "Must specify printer" unless @printer
         profile = Profile.new(name: name, printer: @printer)
-        profile.setup_defaults
         profile.save
         profile.make_current_profile
         ;;warn "Created profile #{profile.name.inspect}"

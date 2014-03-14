@@ -6,14 +6,17 @@ module Quadtone
     attr_accessor :printer
     attr_accessor :printer_options
     attr_accessor :inks
-    attr_accessor :ink_limits
     attr_accessor :ink_partitions
+    attr_accessor :ink_limits
     attr_accessor :linearization
     attr_accessor :default_ink_limit
     attr_accessor :gray_highlight
     attr_accessor :gray_shadow
     attr_accessor :gray_overlap
     attr_accessor :gray_gamma
+    attr_accessor :characterization_curveset
+    attr_accessor :linearization_curveset
+    attr_accessor :test_curveset
 
     ProfilesDir = BaseDir + 'profiles'
     CurrentProfilePath = ProfilesDir + 'current'
@@ -60,20 +63,21 @@ module Quadtone
           # ignore
         when 'N_OF_INKS'
           # ignore
+        when 'INKS'
+          profile.inks = value.split(',').map(&:downcase).map(&:to_sym)
         when 'DEFAULT_INK_LIMIT'
           profile.default_ink_limit = value.to_f / 100
         when /^LIMIT_(.+)$/
-          profile.ink_limits[$1] = value.to_f / 100
+          profile.ink_limits[$1.downcase.to_sym] = value.to_f / 100
         when 'N_OF_GRAY_PARTS'
           # ignore
         when /^GRAY_INK_(\d+)$/
           i = $1.to_i - 1
-          partition = (profile.ink_partitions[i] ||= HashStruct.new)
-          partition.ink = value.to_sym
+          inks_by_num[i] = value.downcase.to_sym
         when /^GRAY_VAL_(\d+)$/
           i = $1.to_i - 1
-          partition = (profile.ink_partitions[i] ||= HashStruct.new)
-          partition.value = value.to_f / 100
+          ink = inks_by_num[i]
+          profile.ink_partitions[ink] = value.to_f / 100
         when 'GRAY_HIGHLIGHT'
           profile.gray_highlight = value.to_f / 100
         when 'GRAY_SHADOW'
@@ -83,16 +87,19 @@ module Quadtone
         when 'GRAY_GAMMA'
           profile.gray_gamma = value.to_f
         when 'LINEARIZE'
-          profile.linearization = value.gsub('"', '').split(/\s+/).map { |v| v.to_f / 100 }
+          profile.linearization = value.gsub('"', '').split(/\s+/).map { |v| Color::Lab.new([v.to_f]) }
         else
-          raise "Unknown key in QTR profile: #{key.inspect}"
+          warn "Unknown key in QTR profile: #{key.inspect}"
         end
       end
+      profile.inks ||= profile.printer.inks
+      profile.characterization_curveset = CurveSet.new(channels: profile.inks, profile: profile, type: :characterization)
+      profile.linearization_curveset = CurveSet.new(channels: [:k], profile: profile, type: :linearization)
       profile
     end
 
     def initialize(params={})
-      @printer_options = {}
+      @printer_options = nil
       @default_ink_limit = 1.0
       @ink_limits = {}
       @ink_partitions = {}
@@ -101,19 +108,6 @@ module Quadtone
       @gray_overlap = 0.10
       @gray_gamma = 1.0
       params.each { |key, value| send("#{key}=", value) }
-    end
-
-    def setup_defaults
-      @printer_options = @printer.default_options
-      @ink_limits = Hash[
-        @printer.inks.map { |ink| [ink, @default_ink_limit] }
-      ]
-      default_partition = 1.0 / @printer.inks.length
-      @ink_partitions = []
-      @printer.inks.each_with_index do |ink, i|
-        value = 1 - (i * default_partition)
-        @ink_partitions << HashStruct.new(ink: ink, value: value)
-      end
     end
 
     def current_profile?
@@ -128,23 +122,25 @@ module Quadtone
       qtr_profile_path.dirname.mkpath
       qtr_profile_path.open('w') do |io|
         io.puts "PRINTER=#{@printer.name}"
-        io.puts "PRINTER_OPTIONS=#{@printer_options.map { |k, v| [k, v].join('=') }.join(',')}"
-        io.puts "GRAPH_CURVE=NO"
-        io.puts "N_OF_INKS=#{@printer.inks.length}"
+        io.puts "PRINTER_OPTIONS=#{@printer_options.map { |k, v| [k, v].join('=') }.join(',')}" if @printer_options
+        io.puts "GRAPH_CURVE=YES"
+        io.puts "INKS=#{@inks.join(',')}"
+        io.puts "N_OF_INKS=#{@inks.length}"
         io.puts "DEFAULT_INK_LIMIT=#{@default_ink_limit * 100}"
         @ink_limits.each do |ink, limit|
-          io.puts "LIMIT_#{ink}=#{limit * 100}"
+          io.puts "LIMIT_#{ink.upcase}=#{limit * 100}"
         end
         io.puts "N_OF_GRAY_PARTS=#{@ink_partitions.length}"
         @ink_partitions.each_with_index do |partition, i|
-          io.puts "GRAY_INK_#{i+1}=#{partition.ink}"
-          io.puts "GRAY_VAL_#{i+1}=#{partition.value * 100}"
+          ink, value = *partition
+          io.puts "GRAY_INK_#{i+1}=#{ink.upcase}"
+          io.puts "GRAY_VAL_#{i+1}=#{value * 100}"
         end
         io.puts "GRAY_HIGHLIGHT=#{@gray_highlight * 100}"
         io.puts "GRAY_SHADOW=#{@gray_shadow * 100}"
         io.puts "GRAY_OVERLAP=#{@gray_overlap * 100}"
         io.puts "GRAY_GAMMA=#{@gray_gamma}"
-        io.puts "LINEARIZE=\"#{@linearization.map { |v| v * 100 }.join(' ')}\"" if @linearization
+        io.puts "LINEARIZE=\"#{@linearization.map(&:l).join(' ')}\"" if @linearization
       end
     end
 
@@ -155,6 +151,7 @@ module Quadtone
       else
         @printer = Printer.new(printer)
       end
+      @printer_options ||= @printer.default_options
     end
 
     def dir_path
@@ -169,6 +166,14 @@ module Quadtone
       Pathname.new('/Library/Printers/QTR/quadtone') + @printer.name + "#{@name}.quad"
     end
 
+    def html_path
+      dir_path + "#{ProfileName}.html"
+    end
+
+    def ink_limit(ink)
+      @ink_limits[ink] || @default_ink_limit
+    end
+
     def install
       # filename needs to match name of profile for quadprofile to install it properly,
       # so temporarily make a symlink
@@ -181,17 +186,29 @@ module Quadtone
     def print_file(input_path, options={})
       options = HashStruct.new(options)
       printer_options = @printer_options.dup
-      printer_options.merge!(options.printer_options) if options.printer_options
+      if options.printer_options
+        options.printer_options.each do |key, value|
+          printer_options[key.to_s] = value
+        end
+      end
       if options.calibrate
         printer_options['ColorModel'] = 'QTCAL'
       else
-        printer_options['ColorModel'] = 'QTRIP16'
         printer_options['ripCurve1'] = @name
       end
-      renderer = Renderer.new(grayscale: !options.calibrate, page_size: @printer.page_size(printer_options['PageSize']))
-      output_path = renderer.render(input_path)
-      @printer.print_file(output_path, printer_options)
-      output_path.unlink unless options.save_rendered
+      if options.render
+        renderer = Renderer.new(grayscale: !options.calibrate, page_size: @printer.page_size(printer_options['PageSize']), rotate: options.rotate)
+        output_path = renderer.render(input_path)
+      else
+        output_path = input_path
+      end
+      @printer.print_file(output_path, printer_options) if options.print
+      if options.save_rendered
+        output_path
+      else
+        output_path.unlink if options.render
+        nil
+      end
     end
 
     def show
@@ -201,22 +218,38 @@ module Quadtone
       @printer_options.each do |key, value|
         puts "\t" + "#{key}: #{value}"
       end
-      puts "Inks: #{@printer.inks.join(', ')}"
+      puts "Inks: #{@inks.join(', ')}"
       puts "Default ink limit: #{@default_ink_limit}"
+      puts "Ink limits:"
+      @ink_limits.each do |ink, limit|
+        puts "\t" + "#{ink.upcase}: #{limit}"
+      end
       puts "Gray settings:"
       puts "\t" + "Highlight: #{@gray_highlight}"
       puts "\t" + "Shadow: #{@gray_shadow}"
       puts "\t" + "Overlap: #{@gray_overlap}"
       puts "Gray gamma: #{@gray_gamma}"
-      puts "Ink limits:"
-      @ink_limits.each do |ink, limit|
-        puts "\t" + "#{ink}: #{limit}"
-      end
       puts "Ink partitions:"
-      @ink_partitions.each do |ink, partition|
-        puts "\t" + "#{ink}: #{partition.ink}: #{partition.value}"
+      @ink_partitions.each do |ink, value|
+        puts "\t" + "#{ink.upcase}: #{value}"
       end
-      puts "Linearization: #{@linearization ? @linearization.join(' ') : '(none)'}"
+      puts "Linearization: #{@linearization.join(', ')}" if @linearization
+    end
+
+    def to_html
+      html = Builder::XmlMarkup.new(indent: 2)
+      html.html do
+        html.head do
+        end
+        html.body do
+          html.h1("Profile: #{@name}")
+        end
+      end
+      html.target!
+    end
+
+    def check
+      #FIXME: check values
     end
 
   end

@@ -2,10 +2,10 @@ module Quadtone
 
   module Tools
 
-    class Target < Tool
+    class Dir < Tool
 
       def run
-        @profile.build_targets
+        puts @profile.dir_path
       end
 
     end

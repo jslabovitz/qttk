@@ -4,6 +4,7 @@ module Quadtone
 
     attr_accessor :gamma
     attr_accessor :grayscale
+    attr_accessor :rotate
     attr_accessor :compress
     attr_accessor :page_size
     attr_accessor :resolution
@@ -60,9 +61,12 @@ module Quadtone
         image = image.gamma_correct(@gamma)
       end
 
-      # Rotate to portrait mode if necessary
-      if (image.columns.to_f / image.rows) > (@page_size.width / @page_size.height)
-        ;;warn "\t" + "Rotating"
+      # Rotate if necessary
+      if @rotate
+        ;;warn "\t" + "Rotating #{@rotate}°"
+        image.rotate!(@rotate)
+      elsif (image.columns.to_f / image.rows) > (@page_size.width / @page_size.height)
+        ;;warn "\t" + "Auto-rotating 90°"
         image.rotate!(90)
       end
 
@@ -72,8 +76,8 @@ module Quadtone
         @desired_size.height / image.rows
       ].min
       if scale != 1
+        ;;warn "\t" + "#{scale < 1 ? 'Reducing' : 'Enlarging'} image size by #{(scale*100).to_i}%"
         image.resize!(scale)
-        ;;warn "\t" + "#{scale < 1 ? 'Reduced' : 'Enlarged'} image size by #{(scale*100).to_i}% to #{image.columns}x#{image.rows}"
       end
 
       # Extend borders to center image within page, minus margins
@@ -89,7 +93,7 @@ module Quadtone
 
       # Write to output file
       params = []
-      params << [@desired_size.width, @desired_size.height].map { |n| '%.2f' % (n.to_f / resolution_scale / 72) }.join('x')
+      params << [@desired_size.width, @desired_size.height].map { |n| '%.2f' % (n.to_f / resolution_scale) }.join('x')
       params << @page_size.name
       params << "@#{@resolution}"
       params << "g#{@gamma}" if @gamma

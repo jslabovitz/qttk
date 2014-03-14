@@ -1,5 +1,22 @@
 # TODO
 
+  - improve Color class
+    - allow instantiation by different methods:
+      - color: color object that responds to #to_<color> (eg: Color::CMYK.new(Color::RGB.new(0,0,0)))
+    - use natural scale for each subclass:
+      - RGB: scalar (255 / 65535)
+    - implement basic math
+      - add, subtract, divide, multiply
+    - add tests
+      - creation/serialization/deserialization
+      - equality/comparison
+      - math
+    - move to separate gem
+
+  - simplify spline curves?
+    http://stackoverflow.com/questions/5525665/smoothing-a-hand-drawn-curve
+    http://www.codeproject.com/Articles/18936/A-Csharp-Implementation-of-Douglas-Peucker-Line-Ap
+
   - add 'check' tool to check attributes & values of profile
 
   - better command-line option parsing:
@@ -19,7 +36,7 @@
     - queue name
     - default options
 
-  - save paper
+  - store paper as file -- reference from profile
     - ID
     - manufacturer
     - source
@@ -27,12 +44,28 @@
     - attributes
     - type (eg, glossy, matte)
 
-  - reimplement linearization:
-      curve = @linearization.curves.first
-      samples = curve.interpolated_samples(21)
-      samples.each_with_index do |sample, i|
-        raise "Linearization not monotonically increasing" if i > 0 && i < samples[i - 1]
-      end
+  - test linearization
+    - print grayscale target image with QTR curve, then measure target
+    - analyze measured target
+      - build grayscale curve from samples
+      - test for linear response
+      - show dMin/dMax, Lab curve
+    - store each test with timestamp
+    - chart scale over time (with multiple tests)
+      - graph differences between values
+      - graph average dE
+        - see: http://cias.rit.edu/~gravure/tt/pdf/pc/TT5_Fred01.pdf (p. 34)
+
+
+  Target specs:
+
+    width of page               11"
+    width of strip              <= 9.5" (24.13cm)
+    patch size (scan direction) >= 10mm (28pt)
+    patch size (perpendicular)  8mm (23pt)
+    gap size in scan direction  0.5mm - 1.0mm (2pt)
+    optimum patches per strip   21
+
 
 ***
 
@@ -138,11 +171,7 @@
     - Medium/high resolution (1440/2880).
     - Unidirectional ("lospeed").
     - Dithering mode ("Ordered")
-  - Save *all* printer options to profile (again) so they can be shown/verified.
   - Save curves to profile so they are only generated once (when profiled).
-  - Make all Color classes have component/value structure.
-    - Rename 'channel' to 'component'.
-    - Remove need for explicit knowledge of class (eg, in Profile#read_samples!: "case sample.input ... when Color::QTR").
 
 - Improve target generation:
   - Add info banner to target:

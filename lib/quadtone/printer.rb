@@ -18,7 +18,7 @@ module Quadtone
       # FIXME: It would be nice to get this path programmatically.
       ppd_file = Pathname.new("/etc/cups/ppd/#{@name}.ppd")
       ink_description = ppd_file.readlines.find { |l| l =~ /^\*%Inks\s*(.*?)\s*$/ } or raise "Can't find inks description for printer #{@name.inspect}"
-      ink_description.chomp.split(/\s+/, 2).last.split(/,/).map(&:to_sym)
+      ink_description.chomp.split(/\s+/, 2).last.split(/,/).map(&:downcase).map(&:to_sym)
     end
 
     def page_size(name=nil)
@@ -27,8 +27,8 @@ module Quadtone
       # change 'length' to 'height', or else there are problems with Hash#length
       size[:height] = size.delete(:length)
       size = HashStruct.new(size)
-      size.imageable_width = (size.margin.right - size.margin.left).pt
-      size.imageable_height = (size.margin.top - size.margin.bottom).pt
+      size.imageable_width = (size.margin.right - size.margin.left) / 72.0
+      size.imageable_height = (size.margin.top - size.margin.bottom) / 72.0
       size
     end
 

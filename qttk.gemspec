@@ -26,6 +26,8 @@ Gem::Specification.new do |s|
   s.add_dependency 'ffi'
   s.add_dependency 'cupsffi'
   s.add_dependency 'hashstruct'
+  s.add_dependency 'descriptive_statistics'
+  s.add_dependency 'spliner'
 
   # s.add_development_dependency 'minitest'
   # s.add_development_dependency 'wrong'

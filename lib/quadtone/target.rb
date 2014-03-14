@@ -1,230 +1,269 @@
-=begin
-
-  Target specs:
-
-    width of page               11"
-    width of strip              <= 9.5" (24.13cm)
-    patch size (scan direction) >= 10mm (28pt)
-    patch size (perpendicular)  8mm (23pt)
-    gap size in scan direction  0.5mm - 1.0mm (2pt)
-    optimum patches per strip   21
-
-=end
-
 module Quadtone
 
   class Target
 
-    Magick::RVG.dpi = 72    # also adds #pt, #in, etc., methods to Numeric
+    attr_accessor :base_dir
+    attr_accessor :channels
+    attr_accessor :type
+    attr_accessor :name
+    attr_accessor :samples
 
-    LabelFontSize     = 10.pt
-    ColumnLabelWidth  = 20.pt
-    RowLabelHeight    = 20.pt
-    PatchSize         = 32.pt
-    GapSize           = 4.pt     # must be even
-    MaxColumns        = 21
-    MinWidth          = ColumnLabelWidth + (PatchSize + MaxColumns)
-    MinHeight         = RowLabelHeight + PatchSize
-    RowLabels         = (1 .. MaxColumns).to_a
-    ColumnLabels      = ('A' .. 'Z').to_a
+    def initialize(params={})
+      params.each { |k, v| send("#{k}=", v) }
+      raise "Base directory must be specified" unless @base_dir
+      raise "Channels must be specified" unless @channels
+      raise "Type must be specified" unless @type
+      raise "Name must be specified" unless @name
+    end
 
-    attr_accessor :color_class
-    attr_accessor :foreground_color
-    attr_accessor :background_color
-    attr_accessor :image_width
-    attr_accessor :image_height
+    def build
+      ;;warn "Making target for channels #{@channels.inspect}"
+      cleanup_files(:all)
 
-    def initialize(color_class, image_width, image_height)
-      @color_class = color_class
-      raise "Page width must be at least #{MinWidth}" if image_width < MinWidth
-      raise "Page height must be at least #{MinHeight}" if image_height < MinHeight
-      @image_width, @image_height = image_width, image_height
-      if @color_class == Color::QTR
-        @foreground_color = Color::QTR.new(:K, 0.5).to_pixel   # 50% black, to avoid reaching ink limit
-        @background_color = Color::QTR.new(:K, 0).to_pixel     # 'white'
-      else
-        @foreground_color = Color::Gray.new(1).to_pixel
-        @background_color = Color::Gray.new(0).to_pixel
+      resolution = 360
+      page_size = HashStruct.new(width: 8, height: 10.5)
+
+      image_list = Magick::ImageList.new
+      @channels.each do |channel|
+        sub_path = base_file(channel)
+        sub_image_path = image_file(channel)
+        ;;warn "Making target #{sub_path.inspect} at #{sub_image_path}"
+        Quadtone.run('targen',
+          # '-v',                 # Verbose mode [optional level 1..N]
+          '-d', 0,              # generate grayscale target
+          '-e', 0,              # White test patches (default 4)
+          '-B', 0,              # Black test patches (default 4 Grey/RGB, else 0)
+          '-s', 42,             # Single channel steps (default grey 50, color 0)
+          sub_path)
+
+        total_patches = 42
+        patches_per_row = 14
+        total_rows = total_patches / patches_per_row
+        row_height = 165
+
+        target_size = [
+          ((total_rows + 1) * row_height).to_f / resolution,
+          page_size.height,
+        ].map { |n| (n * 25.4).to_i }.join('x')
+
+        Quadtone.run('printtarg',
+          # '-v',                 # Verbose mode [optional level 1..N]
+          '-a', 1.45,           # Scale patch size and spacers by factor (e.g. 0.857 or 1.5 etc.)
+          '-r',                 # Don't randomize patch location
+          '-i', 'i1',           # set instrument to EyeOne (FIXME: make configurable)
+          '-t', resolution,     # generate 16-bit TIFF @ 360 ppi
+          '-m', 0,              # Set a page margin in mm (default 6.0 mm)
+          '-L',                 # Suppress any left paper clip border
+          '-p', target_size,    # Select page size
+          sub_path)
+        image = Magick::Image.read(sub_image_path).first
+        # image.background_color = 'transparent'
+        # image = image.transparent('white')
+        case @type
+        when :characterization
+          # if (limit = @profile.ink_limit(channel)) && limit != 1
+          #   ;;warn "\t" + "#{channel.to_s.upcase}: Applying limit of #{limit}"
+          #   levels = [1.0 - limit, 1.0].map { |n| n * Magick::QuantumRange }
+          #   image = image.levelize_channel(*levels)
+          # end
+          # calculate a black RGB pixel for this channel in QTR calibration mode
+          black = Color::QTR.new(channel: channel, value: 0).to_rgb
+          ;;warn "\t" + "#{channel.to_s.upcase}: Colorizing to #{black}"
+          image = image.colorize(1, 0, 1, black.to_pixel)
+        end
+        image_list << image
       end
-      @patches = Array.new([])
-    end
 
-    def read_ti1_file!(ti1_file)
-      cgats = CGATS.new_from_file(ti1_file)
-      section = cgats.sections.first
-      raise "Expecting CGATS section with SINGLE_DIM_STEPS" unless section.header['SINGLE_DIM_STEPS']
-      section.data.each_with_index do |set, i|
+      if @type == :linearization || @type == :test
 
-        raise "Can't add more patches" if num_patches == max_patches
+        width = (page_size.width * resolution).to_i - image_list.first.columns
+        height = page_size.height * resolution
 
-        row = i / max_columns
-        column = i % max_columns
+        ;;width = (page_size.width / 2) * resolution
 
-        patch = HashStruct.new(
-          sample_id: set['SAMPLE_ID'],
-          row: row,
-          column: column,
-          input: @color_class.from_cgats(set),
-          output: Color::XYZ.from_cgats(set),
-        )
+        linear_scale_height = 1 * resolution
+        radial_scale_height = (height - linear_scale_height) / 2
+        sample_image_height = (height - linear_scale_height) / 2
 
-        @patches[row] ||= []
-        @patches[row][column] = patch
-
+        test_images = Magick::ImageList.new
+        test_images << linear_gradation_scale_image([width, linear_scale_height])
+        test_images << radial_gradation_scale_image([width, radial_scale_height])
+        test_images << sample_image([width, sample_image_height])
+        image_list << test_images.append(true)
       end
-    end
 
-    def max_columns
-      MaxColumns
-    end
+      # ;;warn "montaging images"
+      # image_list = image_list.montage do
+      #   self.geometry = Magick::Geometry.new(page_size.width * resolution, page_size.height * resolution)
+      #   self.tile = Magick::Geometry.new(image_list.length, 1)
+      # end
 
-    def max_rows
-      ((@image_height - RowLabelHeight) / PatchSize).floor
-    end
+      # ;;warn "writing target image"
+      # image_list.write(image_file) do
+      #   self.depth = (@type == :characterization) ? 8 : 16
+      #   self.compression = Magick::ZipCompression
+      # end
 
-    def num_rows
-      @patches.length
-    end
-
-    def num_columns
-      @patches.map(&:length).max
-    end
-
-    def max_patches
-      max_columns * max_rows
-    end
-
-    def patches
-      @patches.flatten.compact
-    end
-
-    def num_patches
-      patches.length
-    end
-
-    def label_for_row_column(row, column)
-      "#{ColumnLabels[column]}#{row + 1}"
-    end
-
-    def write_ti2_file(ti2_file)
-      cgats_path = Pathname.new(ti2_file)
-      cgats = CGATS.new
-
-      first_patch = patches.first
-      input_color_class = first_patch.input.class
-      input_color_class = Color::RGB if input_color_class == Color::QTR
-      output_color_class = first_patch.output.class
-
-      # section 1: SINGLE_DIM_STEPS
-      section = CGATS::Section.new
-      section.header = {
-        'CTI2' => nil,
-        'DESCRIPTOR' => 'Argyll Calibration Target chart information 2',
-        'ORIGINATOR' => 'qttk',
-        'CREATED' => DateTime.now.to_s,
-        'TARGET_INSTRUMENT' => 'GretagMacbeth i1 Pro',
-        # 'APPROX_WHITE_POINT' => "95.106486 100.000000 108.844025",
-        'COLOR_REP' => 'iRGB',
-        # 'COLOR_REP' => color_rep,
-        # 'WHITE_COLOR_PATCHES' => white_color_patches,
-        # 'SINGLE_DIM_STEPS' => num_steps,
-        'STEPS_IN_PASS' => num_columns,
-        'PASSES_IN_STRIPS2' => num_rows,
-      }
-      section.data_fields = %w{SAMPLE_ID SAMPLE_LOC} + input_color_class.cgats_fields + output_color_class.cgats_fields
-      patches.sort_by { |p| p.sample_id }.each do |patch|
-        set = {
-          'SAMPLE_ID' => patch.sample_id,
-          'SAMPLE_LOC' => label_for_row_column(patch.row, patch.column),
-        }
-        set.update((input_color_class == Color::RGB ? patch.input.to_rgb : patch.input).to_cgats)
-        set.update(patch.output.to_cgats)
-        section << set
-      end
-      cgats.sections << section
-      cgats_path.open('w') { |io| cgats.write(io) }
-    end
-
-    def write_image_file(image_file)
-      draw_image.write(image_file) do
-        self.depth = 8
+      ;;warn "writing target image"
+      image_list.append(false).write(image_file) do
+        self.depth = (@type == :characterization) ? 8 : 16
         self.compression = Magick::ZipCompression
       end
+
     end
 
-    def draw_image
-      raise "No patches defined" unless @patches.flatten.length > 0
-      rvg = Magick::RVG.new(@image_height, @image_width) do |canvas|
-        canvas.background_fill = @background_color
-        # canvas.translate(0, RowLabelHeight) do |g|
-        #   draw_row_labels(g)
-        # end
-        # canvas.translate(ColumnLabelWidth, 0) do |g|
-        #   draw_column_labels(g)
-        # end
-        canvas.g.translate(ColumnLabelWidth, RowLabelHeight) do |g|
-          draw_patches(g)
-          draw_gaps(g)
+    def linear_gradation_scale_image(size)
+      ;;warn "\t" + "generating linear gradation scale of size #{size.inspect}"
+      bounds = Magick::Rectangle.new(*size, 0, 0)
+      image1 = Magick::Image.new(bounds.width, bounds.height/2, Magick::GradientFill.new(0, 0, 0, bounds.height/2, 'white', 'black'))
+      image2 = image1.posterize(21)
+      image3 = image1.posterize(256)
+      ilist = Magick::ImageList.new
+      ilist << image1
+      ilist << image2
+      ilist << image3
+      ilist.append(true)
+    end
+
+    def radial_gradation_scale_image(size)
+      ;;warn "\t" + "generating radial gradation scale of size #{size.inspect}"
+      bounds = Magick::Rectangle.new(*size, 0, 0)
+      image1 = Magick::Image.new(bounds.width, bounds.height/2, Magick::GradientFill.new(bounds.width/2, bounds.height/2, bounds.width/2, bounds.height/2, 'black', 'white'))
+      image2 = image1.posterize(21).flip
+      ilist = Magick::ImageList.new
+      ilist << image1
+      ilist << image2
+      ilist.append(true)
+    end
+
+    def sample_image(size)
+      ;;warn "\t" + "generating sample image of size #{size.inspect}"
+      bounds = Magick::Rectangle.new(*size, 0, 0)
+      ilist = Magick::ImageList.new(Pathname.new(ENV['HOME']) + 'Desktop' + '121213b.01.tif')
+      ilist.first.resize_to_fill(*size)
+    end
+
+    def measure(options={})
+      options = HashStruct.new(options)
+      @channels.each_with_index do |channel, i|
+        if options.remeasure
+          pass = options.remeasure
+        else
+          pass = ti2_files(channel).length
+        end
+        base = base_file(channel, pass)
+        FileUtils.cp(ti2_file(channel), base.with_extname('.ti2')) unless options.remeasure
+        ;;warn "Measuring target #{base.inspect}"
+        Quadtone.run('chartread',
+          # '-v',                             # Verbose mode [optional level 1..N]
+          '-p',                             # Measure patch by patch rather than strip
+          '-n',                             # Don't save spectral information (default saves spectral)
+          '-l',                             # Save CIE as D50 L*a*b* rather than XYZ
+          i > 0 ? '-N' : nil,               # Disable initial calibration of instrument if possible
+          options.remeasure ? '-r' : nil,   # Resume reading partly read chart
+          base)
+      end
+    end
+
+    def read
+      ;;warn "reading samples for #{@channels.join(', ')} from CGATS files"
+      @samples = {}
+      @channels.each do |channel|
+        samples = {}
+        ti3_files(channel).map do |file|
+          ;;warn "reading #{file}"
+          cgats = CGATS.new_from_file(file)
+          cgats.sections.first.data.each do |set|
+            id = set['SAMPLE_LOC'].gsub(/"/, '')
+            samples[id] ||= []
+            samples[id] << Sample.new(input: Color::Gray.from_cgats(set), output: Color::Lab.from_cgats(set))
+          end
+        end
+        @samples[channel] = samples.map do |id, samples|
+          cc = ClusterCalculator.new(samples: samples, max_clusters: samples.length > 2 ? 2 : 1)
+          cc.cluster!
+          clusters = cc.clusters.sort_by(&:size).reverse
+          ;;warn "Clusters:"
+          clusters.each do |cluster|
+            warn "\t" + cluster.center.to_s
+            cluster.samples.each do |sample|
+              warn "\t\t" + "#{sample.to_s}"
+            end
+          end
+          ;;
+          cluster = clusters.shift
+          if cluster.samples.length < 2 && samples.length > 2
+            raise "Too much spread"
+          end
+          # warn "Dropped samples at patch #{channel}-#{id}: #{clusters.inspect}" unless clusters.empty?
+          output = cluster.center
+          Sample.new(input: samples.first.input, output: output)
         end
       end
-      rvg.draw
     end
 
-    private
+    # private
 
-    def draw_row_labels(g)
-      num_rows.times do |row|
-        label = RowLabels[row]
-        y = row * PatchSize
-        g.text(0, y + (PatchSize / 2), label).styles(font_size: LabelFontSize, fill: @foreground_color.to_color)
-        y += PatchSize
-        g.line(0, y, ColumnLabelWidth + ((MaxColumns + 2) * PatchSize), y).styles(stroke: @foreground_color.to_color)
-      end
+    def base_file(channel=nil, n=nil)
+      @base_dir + (@name.to_s + (channel ? "-#{channel}" : '') + (n ? "-#{n}" : ''))
     end
 
-    def draw_column_labels(g)
-      num_columns.times do |column|
-        label = ColumnLabels[column]
-        x, y = ((column + 1) * PatchSize) + (PatchSize / 2), RowLabelHeight - LabelFontSize
-        g.text(x, y, label).styles(text_anchor: 'middle', font_size: LabelFontSize, fill: @foreground_color.to_color)
-      end
+    def ti1_file(channel)
+      base_file(channel).with_extname('.ti1')
     end
 
-    def draw_patches(g, component_index=nil)
-      @patches.each_with_index do |columns, row|
-        columns.each_with_index do |patch, column|
-          w, h = PatchSize - GapSize, PatchSize - 1
-          x, y = ((column + 1) * PatchSize) + GapSize, row * PatchSize
-          g.rect(w, h, x, y).styles(fill: patch.input.to_pixel.to_color)
-  	    end
-      end
+    def ti2_file(channel, n=nil)
+      base_file(channel, n).with_extname('.ti2')
     end
 
-    def draw_gaps(g)
+    def ti3_file(channel, n=nil)
+      base_file(channel, n).with_extname('.ti3')
+    end
 
-      @patches.each_with_index do |columns, row|
-        columns.each_with_index do |patch, column|
+    def image_file(channel=nil)
+      base_file(channel).with_extname('.tif')
+    end
 
-          value = patch ? patch.input.value : 0
+    def values_file(channel=nil)
+      base_file(channel).with_extname('.txt')
+    end
 
-          prev_patch = column > 0 ? columns[column - 1] : nil
-          prev_patch_value = (prev_patch ? prev_patch.input.value : 0)
+    def ti_files
+      Pathname.glob(base_file.with_extname('*.ti[123]'))
+    end
 
-          next_patch = columns[column + 1]
-          next_patch_value = (next_patch ? next_patch.input.value : 0)
+    def ti2_files(channel)
+      Pathname.glob(base_file(channel).with_extname('*.ti2'))
+    end
 
-          x, y = ((column + 1) * PatchSize) + 1, row * PatchSize
-          w, h = GapSize - 2, PatchSize - 1
+    def ti3_files(channel)
+      Pathname.glob(base_file(channel).with_extname('*.ti3'))
+    end
 
-          color = (prev_patch_value < 0.5 && value < 0.5) ? @foreground_color : @background_color
-          g.rect(w, h, x, y).styles(fill: color.to_color)
+    def image_files
+      Pathname.glob(base_file.with_extname('*.tif'))
+    end
 
-          color = (next_patch_value < 0.5 && value < 0.5) ? @foreground_color : @background_color
-          g.rect(w, h, x + PatchSize, y).styles(fill: color.to_color)
-
+    def cleanup_files(files)
+      ;;warn "deleting files: #{files.inspect}"
+      files = [files].flatten
+      until files.empty?
+        file = files.shift
+        case file
+        when :all
+          files << :ti
+          files += image_files
+        when :ti
+          files += ti_files
+        when Pathname
+          if file.exist?
+            # ;;warn "\t" + file
+            file.unlink
+          end
+        else
+          raise "Unknown file to cleanup: #{file}"
         end
       end
-
     end
 
   end
