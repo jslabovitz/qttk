@@ -4,10 +4,12 @@ PATH
     qttk (0.1.0)
       builder
       cupsffi
+      descriptive_statistics
       ffi
       hashstruct
       pathname3
       rmagick
+      spliner
 
 GEM
   remote: http://rubygems.org/
@@ -15,11 +17,13 @@ GEM
     builder (3.2.2)
     cupsffi (0.1.1)
       ffi
+    descriptive_statistics (1.1.3)
     ffi (1.9.3)
     hashstruct (1.0.0)
     pathname3 (1.2.5)
-    rake (10.1.1)
+    rake (10.2.2)
     rmagick (2.13.2)
+    spliner (1.0.6)
 
 PLATFORMS
   ruby
