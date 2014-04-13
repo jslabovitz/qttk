@@ -83,10 +83,6 @@ There is a single binary command installed, called **qt**.  This binary has seve
     # Read image.jpg and create grayscale channel separations, based on existing curve (outputs montaged separations to image.tif)
     qt separate /Library/Printers/QTR/quadtone/Quad4000-C6/GenericMatte.quad --montage image.jpg
 
-    ##FIXME: document other tools:
-    #   render
-    #   test
-
 
 ## Printing a target
 
