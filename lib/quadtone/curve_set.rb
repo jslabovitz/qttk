@@ -22,7 +22,7 @@ module Quadtone
     end
 
     def print_target
-      @profile.print_file(@target.image_file, calibrate: (@type == :characterization), render: false, print: true)
+      @profile.print_file(@target.image_file, calibrate: (@type == :characterization), print: true)
     end
 
     def measure_target(options={})

@@ -196,19 +196,7 @@ module Quadtone
       else
         printer_options['ripCurve1'] = @name
       end
-      if options.render
-        renderer = Renderer.new(grayscale: !options.calibrate, page_size: @printer.page_size(printer_options['PageSize']), rotate: options.rotate)
-        output_path = renderer.render(input_path)
-      else
-        output_path = input_path
-      end
-      @printer.print_file(output_path, printer_options) if options.print
-      if options.save_rendered
-        output_path
-      else
-        output_path.unlink if options.render
-        nil
-      end
+      @printer.print_file(input_path, printer_options)
     end
 
     def show

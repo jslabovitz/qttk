@@ -97,9 +97,12 @@ module Quadtone
       params << @page_size.name
       params << "@#{@resolution}"
       params << "g#{@gamma}" if @gamma
-      output_path ||= input_path.with_extname(".out-#{params.join('-')}.tif")
+      output_path ||= input_path.with_extname(".out-#{params.join('-')}.png")
       ;;warn "\t" + "Writing image to #{output_path}"
-      image.write(output_path) { self.compression = @compress ? Magick::ZipCompression : Magick::NoCompression }
+      image.write(output_path) do
+        self.density = "#{@resolution}x#{@resolution}"
+        self.compression = @compress ? Magick::ZipCompression : Magick::NoCompression
+      end
 
       # Return output path
       output_path
