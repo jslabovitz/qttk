@@ -152,6 +152,7 @@ module Quadtone
         @printer = Printer.new(printer)
       end
       @printer_options ||= @printer.default_options
+      @inks = @printer.inks
     end
 
     def dir_path
