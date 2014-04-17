@@ -1,5 +1,9 @@
 # TODO
 
+  - include printer name in profile
+    - in filename
+    - or as super-directory for each printer
+
   - improve Color class
     - allow instantiation by different methods:
       - color: color object that responds to #to_<color> (eg: Color::CMYK.new(Color::RGB.new(0,0,0)))
