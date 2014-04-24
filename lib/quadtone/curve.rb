@@ -2,6 +2,9 @@ module Quadtone
 
   class Curve
 
+    DeltaETolerance = 1.0
+    DeltaEMethod = :density
+
     attr_accessor :channel
     attr_accessor :samples
 
@@ -33,27 +36,24 @@ module Quadtone
       spliner[scale].map { |l| Color::Lab.new([l]) }
     end
 
-    def find_ink_limit
+    def ink_limit(method=DeltaEMethod)
       # ;;@samples.each { |s| warn "%s-%s: %.2f => %.2f" % [@channel, s.id, s.input.value, s.output.value] }
-      previous_sample = nil
-      @samples.each do |sample|
-        if previous_sample
-          delta_e = previous_sample.output.delta_e(sample.output)
-          # ;;warn "#{previous_sample} ~ #{sample} = #{delta_e}"
-          return previous_sample if delta_e < 0.3
+      @samples.each_with_index do |sample, i|
+        if i > 0
+          previous_sample = @samples[i - 1]
+          return previous_sample if sample.output_value < previous_sample.output_value
+          return previous_sample if previous_sample.output.delta_e(sample.output, method) < DeltaETolerance
         end
-        previous_sample = sample
       end
-      nil
+      @samples.last
     end
 
     def trim_to_limit
-      if (sample = find_ink_limit)
-        i = @samples.index(sample)
-        ;;warn "trimming curve #{@channel} to sample \##{i}: #{sample}"
-        @samples.slice!(i + 1 .. -1)
-        @input_spliner = @output_spliner = nil
-      end
+      limit = ink_limit
+      i = @samples.index(limit)
+      ;;warn "trimming curve #{@channel} to sample \##{i}: #{limit}"
+      @samples.slice!(i + 1 .. -1)
+      @input_spliner = @output_spliner = nil
     end
 
     def normalize_inputs
@@ -62,24 +62,6 @@ module Quadtone
         sample.input = Color::Gray.new(k: sample.input.k * scale)
       end
       @input_spliner = @output_spliner = nil
-    end
-
-    def density_limit
-      @density_limit ||= @samples.sort_by(&:output).last
-    end
-
-    def delta_e_limit
-      unless @delta_e_limit
-        (0 .. @samples.length - 2).each do |i|
-          sample, next_sample = samples[i], samples[i + 1]
-          delta_e = sample.output.delta_e(next_sample.output, :density)
-          if delta_e < 0.3
-            @delta_e_limit = sample
-            break
-          end
-        end
-      end
-      @delta_e_limit
     end
 
     def dmin
@@ -97,37 +79,45 @@ module Quadtone
     def draw_svg(svg, options={})
       size = options[:size] || 500
 
-      # draw individual samples
-      @samples.each do |sample|
-        svg.circle(cx: size * sample.input_value, cy: size * sample.output_value, r: 2, stroke: 'none', fill: "rgb(#{sample.output.to_rgb.to_a.join(',')})")
-        if sample.error && sample.error > 0.05
-          svg.circle(cx: size * sample.input_value, cy: size * sample.output_value, r: 2 + (sample.error * 10), stroke: 'red', fill: 'none')
-        end
-      end
-
       # draw interpolated curve
-      samples = (0..1).step(1.0 / size).map do |n|
-        [size * n, size * output_for_input(n)]
-      end
       svg.g(fill: 'none', stroke: 'green', :'stroke-width' => 1) do
+        samples = (0..1).step(1.0 / size).map do |n|
+          [size * n, size * output_for_input(n)]
+        end
         svg.polyline(points: samples.map { |pt| pt.join(',') }.join(' '))
       end
 
-      # # draw marker for ink limit (density)
-      # if (limit = density_limit)
-      #   x, y = size * limit.input, size * limit.output
-      #   svg.g(stroke: 'black', :'stroke-width' => 2) do
-      #     svg.line(x1: x, y1: y + 8, x2: x, y2: y - 8)
+      # draw markers for ink limits
+      {
+        density: 'gray',
+        # cie76: 'red',
+        # cie94: 'green',
+        # cmclc: 'blue',
+      }.each do |method, color|
+        limit = ink_limit(method)
+        x, y = size * limit.input_value, size * limit.output_value
+        svg.g(stroke: color, :'stroke-width' => 3) do
+          svg.line(x1: x, y1: y + 8, x2: x, y2: y - 8)
+        end
+      end
+
+      # if (limit = ink_limit)
+      #   x, y = size * limit.input_value, size * limit.output_value
+      #   svg.g(stroke: 'black', :'stroke-width' => 3) do
+      #     svg.line(x1: x, y1: y + 15, x2: x, y2: y - 15)
       #   end
       # end
 
-      # # draw marker for ink limit (delta E)
-      # if (limit = delta_e_limit)
-      #   x, y = size * limit.input, size * limit.output
-      #   svg.g(stroke: 'cyan', :'stroke-width' => 2) do
-      #     svg.line(x1: x, y1: y + 8, x2: x, y2: y - 8)
-      #   end
-      # end
+      # draw individual samples
+      @samples.each_with_index do |sample, i|
+        svg.circle(
+          cx: size * sample.input_value,
+          cy: size * sample.output_value,
+          r: 3,
+          stroke: 'none',
+          fill: "rgb(#{sample.output.to_rgb.to_a.join(',')})",
+          title: sample.label)
+      end
 
       svg.target!
     end

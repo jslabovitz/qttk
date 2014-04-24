@@ -5,6 +5,7 @@ module Quadtone
     attr_accessor :input
     attr_accessor :output
     attr_accessor :error
+    attr_accessor :label
 
     def initialize(params={})
       params.each { |key, value| send("#{key}=", value) }
@@ -19,7 +20,11 @@ module Quadtone
     end
 
     def to_s
-      "#{input} / #{output}"
+      "%s / %s%s" % [
+        input,
+        output,
+        label ? " [#{label}]" : '',
+      ]
     end
 
   end

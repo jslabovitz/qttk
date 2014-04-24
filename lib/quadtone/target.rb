@@ -22,6 +22,14 @@ module Quadtone
 
       resolution = 360
       page_size = HashStruct.new(width: 8, height: 10.5)
+      total_patches = 42
+      patches_per_row = 14
+      total_rows = total_patches / patches_per_row
+      row_height = 165
+      target_size = [
+        ((total_rows + 1) * row_height).to_f / resolution,
+        page_size.height,
+      ].map { |n| (n * 25.4).to_i }.join('x')
 
       image_list = Magick::ImageList.new
       @channels.each do |channel|
@@ -35,17 +43,6 @@ module Quadtone
           '-B', 0,              # Black test patches (default 4 Grey/RGB, else 0)
           '-s', 42,             # Single channel steps (default grey 50, color 0)
           sub_path)
-
-        total_patches = 42
-        patches_per_row = 14
-        total_rows = total_patches / patches_per_row
-        row_height = 165
-
-        target_size = [
-          ((total_rows + 1) * row_height).to_f / resolution,
-          page_size.height,
-        ].map { |n| (n * 25.4).to_i }.join('x')
-
         Quadtone.run('printtarg',
           # '-v',                 # Verbose mode [optional level 1..N]
           '-a', 1.45,           # Scale patch size and spacers by factor (e.g. 0.857 or 1.5 etc.)
@@ -67,9 +64,10 @@ module Quadtone
           #   image = image.levelize_channel(*levels)
           # end
           # calculate a black RGB pixel for this channel in QTR calibration mode
-          black = Color::QTR.new(channel: channel, value: 0).to_rgb
-          ;;warn "\t" + "#{channel.to_s.upcase}: Colorizing to #{black}"
-          image = image.colorize(1, 0, 1, black.to_pixel)
+          black_qtr = Color::QTR.new(channel: channel, value: 0)
+          black_rgb = black_qtr.to_rgb
+          ;;warn "\t" + "#{channel.to_s.upcase}: Colorizing to #{black_rgb}"
+          image = image.colorize(1, 0, 1, black_rgb.to_pixel)
         end
         image_list << image
       end
@@ -183,21 +181,21 @@ module Quadtone
           cc = ClusterCalculator.new(samples: samples, max_clusters: samples.length > 2 ? 2 : 1)
           cc.cluster!
           clusters = cc.clusters.sort_by(&:size).reverse
-          ;;warn "Clusters:"
-          clusters.each do |cluster|
-            warn "\t" + cluster.center.to_s
-            cluster.samples.each do |sample|
-              warn "\t\t" + "#{sample.to_s}"
-            end
-          end
-          ;;
+          # ;;warn "Clusters:"
+          # clusters.each do |cluster|
+          #   warn "\t" + cluster.center.to_s
+          #   cluster.samples.each do |sample|
+          #     warn "\t\t" + "#{sample.to_s}"
+          #   end
+          # end
+          # ;;
           cluster = clusters.shift
-          if cluster.samples.length < 2 && samples.length > 2
-            raise "Too much spread"
+          raise "Too much spread" if cluster.samples.length < 2 && samples.length > 2
+          unless clusters.empty?
+            warn "Dropped #{clusters.length} out of range sample(s) at patch #{channel}-#{id}"
           end
-          # warn "Dropped samples at patch #{channel}-#{id}: #{clusters.inspect}" unless clusters.empty?
           output = cluster.center
-          Sample.new(input: samples.first.input, output: output)
+          Sample.new(input: samples.first.input, output: output, label: "#{channel}-#{id}")
         end
       end
     end

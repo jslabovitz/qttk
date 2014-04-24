@@ -10,7 +10,7 @@ module Quadtone
         Quadtone.run(editor,
           '--wait',
           @profile.qtr_profile_path)
-        @profile = Profile.load_current_profile
+        @profile = Profile.load(@profile.qtr_profile_path)
         @profile.check
         @profile.save
         @profile.show

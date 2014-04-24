@@ -2,23 +2,41 @@ module Quadtone
 
   class Printer
 
+    ImportantOptions = %i{
+      MediaType
+      Resolution
+      ripBlack
+      ripSpeed
+      stpDither
+    }
+
     attr_accessor :name
     attr_accessor :options
     attr_accessor :attributes
+    attr_accessor :inks
 
     def initialize(name)
       @name = name
       @cups_ppd = CupsPPD.new(@name, nil)
-      @options = @cups_ppd.options.map { |o| HashStruct.new(o) }
-      @attributes = @cups_ppd.attributes.map { |a| HashStruct.new(a) }
+      @options = Hash[
+        @cups_ppd.options.map { |o| [o.delete(:keyword).to_sym, HashStruct.new(o)] }
+      ]
+      @attributes = Hash[
+        @cups_ppd.attributes.map { |a| [a.delete(:name).to_sym, HashStruct.new(a)] }
+      ]
       @cups_printer = CupsPrinter.new(@name)
+      get_inks
     end
 
-    def inks
+    def quadtone?
+      @attributes[:Manufacturer].value == 'QuadToneRIP'
+    end
+
+    def get_inks
       # FIXME: It would be nice to get this path programmatically.
       ppd_file = Pathname.new("/etc/cups/ppd/#{@name}.ppd")
       ink_description = ppd_file.readlines.find { |l| l =~ /^\*%Inks\s*(.*?)\s*$/ } or raise "Can't find inks description for printer #{@name.inspect}"
-      ink_description.chomp.split(/\s+/, 2).last.split(/,/).map(&:downcase).map(&:to_sym)
+      @inks = ink_description.chomp.split(/\s+/, 2).last.split(/,/).map(&:downcase).map(&:to_sym)
     end
 
     def page_size(name=nil)
@@ -34,34 +52,39 @@ module Quadtone
 
     def default_options
       Hash[
-        @options.map do |option|
-          [option.keyword, option.default_choice]
+        @options.map do |name, option|
+          [name, option.default_choice]
         end
       ]
     end
 
-    def print_printer_attributes
+    def show_attributes
       puts "Attributes:"
-      max_field_length = @attributes.map(&:name).map(&:length).max
-      @attributes.sort_by(&:name).each do |attribute|
+      max_field_length = @attributes.keys.map(&:length).max
+      @attributes.sort_by { |name, info| name }.each do |name, attribute|
         puts "\t" + "%#{max_field_length}s: %s%s" % [
-          attribute.name,
+          name,
           attribute.value.inspect,
           attribute.spec.empty? ? '' : " [#{attribute.spec.inspect}]"
         ]
       end
     end
 
-    def print_printer_options
+    def show_options
       puts "Options:"
-      max_field_length = @options.map(&:keyword).map(&:length).max
-      @options.sort_by(&:keyword).each do |option|
+      max_field_length = @options.keys.map(&:length).max
+      @options.sort_by { |name, option| name }.each do |name, option|
         puts "\t" + "%#{max_field_length}s: %s [%s]" % [
-          option.keyword,
+          name,
           option.default_choice.inspect,
           (option.choices.map { |o| o.choice } - [option.default_choice]).map { |o| o.inspect }.join(', ')
         ]
       end
+    end
+
+    def show_inks
+      puts "Inks:"
+      puts "\t" + @inks.map { |ink| ink.to_s.upcase }.join(', ')
     end
 
     def print_file(path, options)

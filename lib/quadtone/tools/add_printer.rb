@@ -4,7 +4,7 @@ module Quadtone
 
     class AddPrinter < Tool
 
-      def load_current_profile
+      def load_profile
         false
       end
 

@@ -4,17 +4,12 @@ module Quadtone
 
     class List < Tool
 
-      def load_current_profile
+      def load_profile
         false
       end
 
       def run
-        Profile.profile_names.each do |name|
-          puts "%2s %s" % [
-            (name == Profile.current_profile_name) ? '*' : '',
-            name
-          ]
-        end
+        Profile.profile_names.each { |name| puts name }
       end
 
     end

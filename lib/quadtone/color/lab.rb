@@ -2,6 +2,13 @@ module Color
 
   class Lab < Base
 
+    DeltaEMethods = [
+      :density,
+      :cie76,
+      :cie94,
+      :cmclc
+    ]
+
     def self.component_names
       [:l, :a, :b]
     end
@@ -45,15 +52,17 @@ module Color
       # http://www.brucelindbloom.com/iPhone/ColorDiff.html
       l1, a1, b1 = self.l, self.a, self.b
       l2, a2, b2 = other.l, other.a, other.b
-      c1, c2 = self.chroma, other.chroma
-      h1, h2 = self.hue, other.hue
       dl = l2 - l1
       da = a1 - a2
       db = b1 - b2
-      dc = c1 - c2
-      dh2 = da**2 + db**2 - dc**2
-      return Float::NAN if dh2 < 0
-      dh = sqrt(dh2)
+      if method == :cie94 || method == :cmclc
+        c1, c2 = self.chroma, other.chroma
+        h1, h2 = self.hue, other.hue
+        dc = c1 - c2
+        dh2 = da**2 + db**2 - dc**2
+        return Float::NAN if dh2 < 0
+        dh = sqrt(dh2)
+      end
       case method
       when :density
         dl.abs

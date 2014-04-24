@@ -21,6 +21,8 @@ module Quadtone
           @profile.characterization_curveset.measure_target(force: @force)
         when 'process'
           @profile.characterization_curveset.process_target
+        when 'chart'
+          @profile.characterization_curveset.chart_target
         else
           raise ToolUsageError, "Unknown action: #{action.inspect}"
         end

@@ -34,7 +34,6 @@ module Quadtone
 
       def run(*args)
         page_size = @profile.printer.page_size(@page_size)
-        ;;pp(@page_size => page_size)
         renderer = Renderer.new(grayscale: true, page_size: page_size, rotate: @rotate, resolution: @resolution)
         args.map { |p| Pathname.new(p) }.each do |input_path|
           output_path = renderer.render(input_path)

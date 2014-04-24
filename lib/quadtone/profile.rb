@@ -2,9 +2,9 @@ module Quadtone
 
   class Profile
 
-    attr_accessor :name
     attr_accessor :printer
     attr_accessor :printer_options
+    attr_accessor :medium
     attr_accessor :inks
     attr_accessor :ink_partitions
     attr_accessor :ink_limits
@@ -19,82 +19,15 @@ module Quadtone
     attr_accessor :test_curveset
 
     ProfilesDir = BaseDir + 'profiles'
-    CurrentProfilePath = ProfilesDir + 'current'
-    ProfileName = 'profile'
-
-    def self.has_current_profile?
-      CurrentProfilePath.symlink?
-    end
-
-    def self.current_profile_name
-      CurrentProfilePath.readlink.basename.to_s if has_current_profile?
-    end
-
-    def self.make_current_profile(name)
-      profile_path = ProfilesDir + name
-      raise "Profile #{name.inspect} does not exist" unless profile_path.exist?
-      CurrentProfilePath.unlink if CurrentProfilePath.exist?
-      profile_path.symlink(CurrentProfilePath)
-    end
+    ProfileName = 'profile.txt'
 
     def self.profile_names
-      Pathname.glob(ProfilesDir + '*').select { |p| !p.symlink? && p.directory? && p[0] != '.' }.map(&:basename)
-    end
-
-    def self.load_current_profile
-      load(current_profile_name)
+      Pathname.glob(ProfilesDir + '*').select { |p| p.directory? && p[0] != '.' }.map(&:basename)
     end
 
     def self.load(name)
-      profile = Profile.new(name: name)
-      inks_by_num = []
-      profile.qtr_profile_path.readlines.each do |line|
-        line.chomp!
-        line.sub!(/#.*/, '')
-        line.strip!
-        next if line.empty?
-        key, value = line.split('=', 2)
-        case key
-        when 'PRINTER'
-          profile.printer = value
-        when 'PRINTER_OPTIONS'
-          profile.printer_options = Hash[ value.split(',').map { |o| o.split('=') } ]
-        when 'GRAPH_CURVE'
-          # ignore
-        when 'N_OF_INKS'
-          # ignore
-        when 'INKS'
-          profile.inks = value.split(',').map(&:downcase).map(&:to_sym)
-        when 'DEFAULT_INK_LIMIT'
-          profile.default_ink_limit = value.to_f / 100
-        when /^LIMIT_(.+)$/
-          profile.ink_limits[$1.downcase.to_sym] = value.to_f / 100
-        when 'N_OF_GRAY_PARTS'
-          # ignore
-        when /^GRAY_INK_(\d+)$/
-          i = $1.to_i - 1
-          inks_by_num[i] = value.downcase.to_sym
-        when /^GRAY_VAL_(\d+)$/
-          i = $1.to_i - 1
-          ink = inks_by_num[i]
-          profile.ink_partitions[ink] = value.to_f / 100
-        when 'GRAY_HIGHLIGHT'
-          profile.gray_highlight = value.to_f / 100
-        when 'GRAY_SHADOW'
-          profile.gray_shadow = value.to_f / 100
-        when 'GRAY_OVERLAP'
-          profile.gray_overlap = value.to_f / 100
-        when 'GRAY_GAMMA'
-          profile.gray_gamma = value.to_f
-        when 'LINEARIZE'
-          profile.linearization = value.gsub('"', '').split(/\s+/).map { |v| Color::Lab.new([v.to_f]) }
-        else
-          warn "Unknown key in QTR profile: #{key.inspect}"
-        end
-      end
-      profile.inks ||= profile.printer.inks
-      profile.characterization_curveset = CurveSet.new(channels: profile.inks, profile: profile, type: :characterization)
-      profile.linearization_curveset = CurveSet.new(channels: [:k], profile: profile, type: :linearization)
+      profile = Profile.new
+      profile.load(name)
       profile
     end
 
@@ -110,12 +43,63 @@ module Quadtone
       params.each { |key, value| send("#{key}=", value) }
     end
 
-    def current_profile?
-      self.class.has_current_profile? && @name == self.class.current_profile_name
+    def name
+      [
+        @printer.name.gsub(/[^-A-Z0-9]/i, ''),
+        @medium.gsub(/[^-A-Z0-9]/i, ''),
+      ].flatten.join('-')
     end
 
-    def make_current_profile
-      self.class.make_current_profile(@name)
+    def load(name)
+      inks_by_num = []
+      (ProfilesDir + name + ProfileName).readlines.each do |line|
+        line.chomp!
+        line.sub!(/#.*/, '')
+        line.strip!
+        next if line.empty?
+        key, value = line.split('=', 2)
+        case key
+        when 'PRINTER'
+          @printer = Printer.new(value)
+        when 'PRINTER_OPTIONS'
+          @printer_options = Hash[ value.split(',').map { |o| o.split('=') } ]
+        when 'MEDIUM'
+          @medium = value
+        when 'GRAPH_CURVE'
+          # ignore
+        when 'N_OF_INKS'
+          # ignore
+        when 'INKS'
+          @inks = value.split(',').map(&:downcase).map(&:to_sym)
+        when 'DEFAULT_INK_LIMIT'
+          @default_ink_limit = value.to_f / 100
+        when /^LIMIT_(.+)$/
+          @ink_limits[$1.downcase.to_sym] = value.to_f / 100
+        when 'N_OF_GRAY_PARTS'
+          # ignore
+        when /^GRAY_INK_(\d+)$/
+          i = $1.to_i - 1
+          inks_by_num[i] = value.downcase.to_sym
+        when /^GRAY_VAL_(\d+)$/
+          i = $1.to_i - 1
+          ink = inks_by_num[i]
+          @ink_partitions[ink] = value.to_f / 100
+        when 'GRAY_HIGHLIGHT'
+          @gray_highlight = value.to_f / 100
+        when 'GRAY_SHADOW'
+          @gray_shadow = value.to_f / 100
+        when 'GRAY_OVERLAP'
+          @gray_overlap = value.to_f / 100
+        when 'GRAY_GAMMA'
+          @gray_gamma = value.to_f
+        when 'LINEARIZE'
+          @linearization = value.gsub('"', '').split(/\s+/).map { |v| Color::Lab.new([v.to_f]) }
+        else
+          warn "Unknown key in QTR profile: #{key.inspect}"
+        end
+      end
+      @characterization_curveset = CurveSet.new(channels: @inks, profile: self, type: :characterization)
+      @linearization_curveset = CurveSet.new(channels: [:k], profile: self, type: :linearization)
     end
 
     def save
@@ -123,6 +107,7 @@ module Quadtone
       qtr_profile_path.open('w') do |io|
         io.puts "PRINTER=#{@printer.name}"
         io.puts "PRINTER_OPTIONS=#{@printer_options.map { |k, v| [k, v].join('=') }.join(',')}" if @printer_options
+        io.puts "MEDIUM=#{@medium}"
         io.puts "GRAPH_CURVE=YES"
         io.puts "INKS=#{@inks.join(',')}"
         io.puts "N_OF_INKS=#{@inks.length}"
@@ -144,31 +129,16 @@ module Quadtone
       end
     end
 
-    def printer=(printer)
-      case printer
-      when Printer, nil
-        @printer = printer
-      else
-        @printer = Printer.new(printer)
-      end
-      @printer_options ||= @printer.default_options
-      @inks = @printer.inks
-    end
-
     def dir_path
-      ProfilesDir + @name
+      ProfilesDir + name
     end
 
     def qtr_profile_path
-      dir_path + "#{ProfileName}.txt"
+      dir_path + ProfileName
     end
 
     def quad_file_path
-      Pathname.new('/Library/Printers/QTR/quadtone') + @printer.name + "#{@name}.quad"
-    end
-
-    def html_path
-      dir_path + "#{ProfileName}.html"
+      Pathname.new('/Library/Printers/QTR/quadtone') + @printer.name + "#{name}.quad"
     end
 
     def ink_limit(ink)
@@ -178,7 +148,7 @@ module Quadtone
     def install
       # filename needs to match name of profile for quadprofile to install it properly,
       # so temporarily make a symlink
-      tmp_file = Pathname.new('/tmp') + "#{@name}.txt"
+      tmp_file = Pathname.new('/tmp') + "#{name}.txt"
       qtr_profile_path.symlink(tmp_file)
       system('/Library/Printers/QTR/bin/quadprofile', tmp_file)
       tmp_file.unlink
@@ -195,18 +165,19 @@ module Quadtone
       if options.calibrate
         printer_options['ColorModel'] = 'QTCAL'
       else
-        printer_options['ripCurve1'] = @name
+        printer_options['ripCurve1'] = name
       end
       @printer.print_file(input_path, printer_options)
     end
 
     def show
-      puts "Profile: #{@name}"
+      puts "Profile: #{name}"
       puts "Printer: #{@printer.name}"
       puts "Printer options:"
       @printer_options.each do |key, value|
         puts "\t" + "#{key}: #{value}"
       end
+      puts "Medium: #{@medium}"
       puts "Inks: #{@inks.join(', ')}"
       puts "Default ink limit: #{@default_ink_limit}"
       puts "Ink limits:"
@@ -231,7 +202,7 @@ module Quadtone
         html.head do
         end
         html.body do
-          html.h1("Profile: #{@name}")
+          html.h1("Profile: #{name}")
         end
       end
       html.target!

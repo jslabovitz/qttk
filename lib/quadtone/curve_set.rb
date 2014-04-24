@@ -36,7 +36,14 @@ module Quadtone
         import_from_target
         set_common_white
         trim_to_limits
-        @profile.ink_limits = ink_limits
+        @profile.ink_limits = Hash[
+          @curves.map do |curve|
+            [
+              curve.channel,
+              curve.samples.last.input.value
+            ]
+          end
+        ]
         normalize_curves
         @profile.ink_partitions = partitions
       when :linearization, :test
@@ -49,6 +56,13 @@ module Quadtone
       end
       @profile.save
       @profile.install
+    end
+
+    def chart_target
+      import_from_target
+      out_file = (@profile.dir_path + @type.to_s).with_extname('.html')
+      out_file.open('w') { |io| io.write(to_html) }
+      ;;warn "Saved chart to #{out_file.to_s.inspect}"
     end
 
     private
@@ -75,17 +89,6 @@ module Quadtone
 
     def trim_to_limits
       @curves.each { |c| c.trim_to_limit }
-    end
-
-    def ink_limits
-      Hash[
-        @curves.map do |curve|
-          [
-            curve.channel,
-            curve.samples.last.input.value
-          ]
-        end
-      ]
     end
 
     def normalize_curves
@@ -140,8 +143,7 @@ module Quadtone
           html.tr do
             [
               'channel',
-              'ink limit: density',
-              'ink limit: deltaE',
+              'ink limit',
               'density: min',
               'density: max',
               'density: range',
@@ -152,11 +154,10 @@ module Quadtone
               dmin, dmax = curve.dynamic_range
               [
                 curve.channel.to_s,
-                curve.density_limit ? curve.density_limit.input : '--',
-                curve.delta_e_limit ? curve.delta_e_limit.input : '--',
-                dmin,
-                dmax,
-                dmax - dmin,
+                curve.ink_limit.input,
+                '%.2f' % dmin,
+                '%.2f' % dmax,
+                '%.2f' % (dmax - dmin),
               ].each { |s| html.td(s) }
             end
           end
@@ -170,10 +171,10 @@ module Quadtone
       size = options[:size] || 500
       svg = Builder::XmlMarkup.new(indent: 2)
       svg.svg(xmlns: 'http://www.w3.org/2000/svg', version: '1.1') do
-        svg.g(width: size, height: size) do
+        svg.g(width: size, height: size, transform: "translate(0,#{size}) scale(1,-1)") do
           svg.g(stroke: 'blue') do
             svg.rect(x: 0, y: 0, width: size, height: size, fill: 'none', :'stroke-width' => 1)
-            svg.line(x1: 0, y1: size, x2: size, y2: 0, :'stroke-width' => 0.5)
+            svg.line(x1: 0, y1: 0, x2: size, y2: size, :'stroke-width' => 0.5)
           end
           @curves.each do |curve|
             curve.draw_svg(svg, options)
