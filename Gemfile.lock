@@ -21,7 +21,7 @@ GEM
     ffi (1.9.3)
     hashstruct (1.0.0)
     pathname3 (1.2.5)
-    rake (10.3.0)
+    rake (10.3.1)
     rmagick (2.13.2)
     spliner (1.0.6)
 
