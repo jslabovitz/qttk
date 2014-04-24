@@ -1,9 +1,5 @@
 # TODO
 
-  - include printer name in profile
-    - in filename
-    - or as super-directory for each printer
-
   - improve Color class
     - allow instantiation by different methods:
       - color: color object that responds to #to_<color> (eg: Color::CMYK.new(Color::RGB.new(0,0,0)))
@@ -34,19 +30,6 @@
     - qtprinter: manage printers
     - qtpaper: manage paper types
     - qtprint: print images
-
-  - save printer info
-    - ID
-    - queue name
-    - default options
-
-  - store paper as file -- reference from profile
-    - ID
-    - manufacturer
-    - source
-    - name
-    - attributes
-    - type (eg, glossy, matte)
 
   - test linearization
     - print grayscale target image with QTR curve, then measure target
