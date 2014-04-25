@@ -41,7 +41,8 @@ module Quadtone
 
     def page_size(name=nil)
       name ||= @cups_ppd.attribute('DefaultPageSize').first[:value]
-      size = HashStruct.new(@cups_ppd.page_size(name))
+      page_size = @cups_ppd.page_size(name) or raise "Can't determine page size #{name.inspect}"
+      size = HashStruct.new(page_size)
       # change 'length' to 'height', or else there are problems with Hash#length
       size[:height] = size.delete(:length)
       size = HashStruct.new(size)
