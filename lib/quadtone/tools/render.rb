@@ -4,16 +4,8 @@ module Quadtone
 
     class Render < Tool
 
-      attr_accessor :printer_options
       attr_accessor :rotate
       attr_accessor :resolution
-
-      def initialize
-        super
-        @printer_options = {}
-        @rotate = false
-        @resolution = false
-      end
 
       def parse_option(option, args)
         case option
@@ -22,22 +14,19 @@ module Quadtone
         when '--resolution'
           @resolution = args.shift.to_f
         when '--page-size'
-          @page_size = args.shift
-        when '--option', '--options'
-          @printer_options.merge!(
-            Hash[
-              args.shift.split(',').map { |o| o.split('=') }
-            ]
-          )
+          @page_size = @profile.printer.page_size(args.shift)
         end
       end
 
       def run(*args)
-        page_size = @profile.printer.page_size(@page_size)
-        renderer = Renderer.new(grayscale: true, page_size: page_size, rotate: @rotate, resolution: @resolution)
+        options = {}
+        options.merge!(page_size: @page_size) if @page_size
+        options.merge!(rotate: @rotate) if @rotate
+        options.merge!(resolution: @resolution) if @resolution
+        renderer = Renderer.new(options)
         args.map { |p| Pathname.new(p) }.each do |input_path|
-          output_path = renderer.render(input_path)
-          ;;warn "\t" + "Wrote rendered file to #{output_path}"
+          output_paths = renderer.render(input_path)
+          ;;warn "\t" + "Wrote rendered file to #{output_paths.join(', ')}"
         end
       end
 
