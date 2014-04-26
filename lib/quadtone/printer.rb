@@ -46,8 +46,8 @@ module Quadtone
       # change 'length' to 'height', or else there are problems with Hash#length
       size[:height] = size.delete(:length)
       size = HashStruct.new(size)
-      size.imageable_width = (size.margin.right - size.margin.left) / 72.0
-      size.imageable_height = (size.margin.top - size.margin.bottom) / 72.0
+      size.imageable_width = size.margin.right - size.margin.left
+      size.imageable_height = size.margin.top - size.margin.bottom
       size
     end
 
