@@ -35,8 +35,12 @@ module Quadtone
     def get_inks
       # FIXME: It would be nice to get this path programmatically.
       ppd_file = Pathname.new("/etc/cups/ppd/#{@name}.ppd")
-      ink_description = ppd_file.readlines.find { |l| l =~ /^\*%Inks\s*(.*?)\s*$/ } or raise "Can't find inks description for printer #{@name.inspect}"
-      @inks = ink_description.chomp.split(/\s+/, 2).last.split(/,/).map(&:downcase).map(&:to_sym)
+      ppd_file.readlines.each do |line|
+        if line =~ /^\*%Inks\s*(.*?)\s*$/
+          @inks = $1.split(/,/).map(&:downcase).map(&:to_sym)
+          break
+        end
+      end
     end
 
     def page_size(name=nil)
