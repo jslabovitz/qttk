@@ -1,5 +1,7 @@
 # Quadtone Toolkit (QTTK)
 
+## NOTE: This README is out of date relative to the current code. Apologies.
+
 QTTK provides a set of tools for printmakers who use the quadtone inkjet printing process.  It works in conjunction with the [QuadtoneRIP](http://www.quadtonerip.com) (QTR) grayscale printing system.
 
 At the moment, the software consists largely of libraries of code (written in the [Ruby](http://ruby-lang.org) programming language) and a single command-line tool.  Hence, it is probably not interesting to most printmakers unless they are either programmers or people comfortable with the Unix command line.  Additionally, printmakers who are happy with Epson's 'automatic black and white' mode, the default QTR profiles, or the [Piezography](http://piezography.com) system can probably feel comfortable in staying with the process they currently use.

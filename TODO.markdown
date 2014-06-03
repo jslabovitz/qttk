@@ -227,7 +227,6 @@
 
 - Create guide for process (on wiki).
 
-- Document classes & methods.
+- Use Gutenprint to generate DeviceN or ESC/P2 files?
 
-- Bypass QTR entirely
-  - Use Gutenprint to generate DeviceN or ESC/P2 files.
+- Document classes & methods.
