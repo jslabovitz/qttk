@@ -1,5 +1,13 @@
 # TODO
 
+  - build linearization as strip chart
+    - compare quality against spot chart
+
+  - for each new characterization/linearization, add 'session'
+    - each in dated directory
+    - for 'process', each characterization/linearization is averaged
+    - can delete specific -zation
+
   - improve Color class
     - allow instantiation by different methods:
       - color: color object that responds to #to_<color> (eg: Color::CMYK.new(Color::RGB.new(0,0,0)))
