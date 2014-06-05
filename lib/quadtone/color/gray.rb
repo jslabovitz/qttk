@@ -19,7 +19,7 @@ module Color
     end
 
     def value
-      k / 100
+      k / 100.0
     end
 
     def to_cgats
@@ -29,7 +29,7 @@ module Color
     end
 
     def to_rgb
-      n = 1 - (k / 100)
+      n = 1 - value
       Color::RGB.new([n, n, n])
     end
 

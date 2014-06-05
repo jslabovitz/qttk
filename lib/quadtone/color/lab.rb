@@ -30,7 +30,7 @@ module Color
     end
 
     def value
-      1 - (l / 100)
+      1 - (l / 100.0)
     end
 
     def chroma
@@ -101,15 +101,15 @@ module Color
     def to_xyz
       # after http://www.easyrgb.com/index.php?X=MATH&H=08#text8
 
-      y = (l + 16) / 116
-      x = (a / 500) + y
-      z = y - (b / 200)
+      y = (l + 16) / 116.0
+      x = (a / 500.0) + y
+      z = y - (b / 200.0)
 
       x, y, z = [x, y, z].map do |n|
         if (n3 = n**3) > 0.008856
           n3
         else
-          (n - 16 / 116) / 7.787
+          (n - 16 / 116.0) / 7.787
         end
       end
 
