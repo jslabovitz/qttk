@@ -12,9 +12,9 @@ module Quadtone
   		  end
         color_map.pixel_interpolation_method = Magick::IntegerInterpolatePixel
   		  color_map.view(0, 0, curve.num_samples, 1) do |view|
-          curve.samples.each_with_index do |sample, x|
+          curve.samples.each_with_index do |sample, i|
             value = ((1 - sample.output.value) * 65535).to_i
-            view[0][x] = Magick::Pixel.new(value, value, value)
+            view[0][curve.num_samples - 1 - i] = Magick::Pixel.new(value, value, value)
       		end
     		end
         @luts[curve.channel] = color_map
