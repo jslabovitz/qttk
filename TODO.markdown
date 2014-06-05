@@ -1,5 +1,9 @@
 # TODO
 
+  - move target data/logic from CurveSet to Target
+
+  - add <xml> tag to SVG-only output
+
   - build linearization as strip chart
     - compare quality against spot chart
 
