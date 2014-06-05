@@ -1,7 +1,9 @@
 module Quadtone
-  
+
   class Separator
-  
+
+    attr_accessor :luts
+
     def initialize(curve_set)
   	  @luts = {}
   	  curve_set.curves.each do |curve|
@@ -10,27 +12,25 @@ module Quadtone
   		  end
         color_map.pixel_interpolation_method = Magick::IntegerInterpolatePixel
   		  color_map.view(0, 0, curve.num_samples, 1) do |view|
-      		curve.samples.each do |sample|
-      		  col = 255 - (sample.input * (curve.num_samples - 1)).to_i
-            v = 65535 - (sample.output * 65535).to_i
-            view[0][col] = Magick::Pixel.new(v, v, v)
+          curve.samples.each_with_index do |sample, x|
+            value = ((1 - sample.output.value) * 65535).to_i
+            view[0][x] = Magick::Pixel.new(value, value, value)
       		end
     		end
-    		@luts[curve.key] = color_map
+        @luts[curve.channel] = color_map
   		end
-    	self
   	end
-  
+
     def separate(image)
-      image_list = Magick::ImageList.new
+      images = {}
       @luts.each do |channel, lut|
         image2 = image.copy.clut_channel(lut)
-        image2['Label'] = channel.to_s
-    	  image_list << image2
+        image2['Label'] = channel.to_s.upcase
+        images[channel] = image2
       end
-      image_list
+      images
     end
-  
+
   end
-  
+
 end
