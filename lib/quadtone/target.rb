@@ -23,7 +23,8 @@ module Quadtone
 
       resolution = 360
       page_size = HashStruct.new(width: 8, height: 10.5)
-      total_patches = 42
+      # total_patches = 42
+      ;;total_patches = 14
       patches_per_row = 14
       total_rows = total_patches / patches_per_row
       row_height = 165
