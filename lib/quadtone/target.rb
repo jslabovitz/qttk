@@ -43,7 +43,7 @@ module Quadtone
           '-d', 0,              # generate grayscale target
           '-e', 0,              # White test patches (default 4)
           '-B', 0,              # Black test patches (default 4 Grey/RGB, else 0)
-          '-s', 42,             # Single channel steps (default grey 50, color 0)
+          '-s', total_patches,  # Single channel steps (default grey 50, color 0)
           sub_path)
         Quadtone.run('printtarg',
           # '-v',                 # Verbose mode [optional level 1..N]
