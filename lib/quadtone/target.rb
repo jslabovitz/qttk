@@ -144,24 +144,30 @@ module Quadtone
 
     def measure(options={})
       options = HashStruct.new(options)
-      @channels.each_with_index do |channel, i|
-        if options.remeasure
-          pass = options.remeasure
-        else
-          pass = ti2_files(channel).length
-        end
-        base = base_file(channel, pass)
-        FileUtils.cp(ti2_file(channel), base.with_extname('.ti2')) unless options.remeasure
-        ;;warn "Measuring target #{base.inspect}"
-        Quadtone.run('chartread',
-          # '-v',                             # Verbose mode [optional level 1..N]
-          '-p',                             # Measure patch by patch rather than strip
-          '-n',                             # Don't save spectral information (default saves spectral)
-          '-l',                             # Save CIE as D50 L*a*b* rather than XYZ
-          i > 0 ? '-N' : nil,               # Disable initial calibration of instrument if possible
-          options.remeasure ? '-r' : nil,   # Resume reading partly read chart
-          base)
+      channels_to_measure = options.channels || @channels
+      channels_to_measure.each_with_index do |channel, i|
+        measure_channel(channel, options.merge(disable_calibration: i > 0))
       end
+    end
+
+    def measure_channel(channel, options=HashStruct.new)
+      options = HashStruct.new(options)
+      if options.remeasure
+        pass = options.remeasure
+      else
+        pass = ti2_files(channel).length
+      end
+      base = base_file(channel, pass)
+      FileUtils.cp(ti2_file(channel), base.with_extname('.ti2')) unless options.remeasure
+      ;;warn "Measuring target #{base.inspect}"
+      Quadtone.run('chartread',
+        # '-v',                             # Verbose mode [optional level 1..N]
+        '-p',                             # Measure patch by patch rather than strip
+        '-n',                             # Don't save spectral information (default saves spectral)
+        '-l',                             # Save CIE as D50 L*a*b* rather than XYZ
+        options.disable_calibration ? '-N' : nil, # Disable initial calibration of instrument if possible
+        options.remeasure ? '-r' : nil,   # Resume reading partly read chart
+        base)
     end
 
     def read
