@@ -13,7 +13,7 @@ module Quadtone
       raise "Profile must be specified" unless @profile
       raise "Channels must be specified" unless @channels
       raise "Type must be specified" unless @type
-      @target = Target.new(name: @type.to_s, channels: @channels, base_dir: @profile.dir_path, type: @type)
+      @target = Target.new(name: @type.to_s, channels: @channels, base_dir: @profile.dir_path, type: @type, ink_limits: @profile.ink_limits)
       generate_scale
     end
 

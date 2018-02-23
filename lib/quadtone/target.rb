@@ -6,6 +6,7 @@ module Quadtone
     attr_accessor :channels
     attr_accessor :type
     attr_accessor :name
+    attr_accessor :ink_limits
     attr_accessor :samples
 
     def initialize(params={})
@@ -58,11 +59,11 @@ module Quadtone
         # image = image.transparent('white')
         case @type
         when :characterization
-          # if (limit = @profile.ink_limit(channel)) && limit != 1
-          #   ;;warn "\t" + "#{channel.to_s.upcase}: Applying limit of #{limit}"
-          #   levels = [1.0 - limit, 1.0].map { |n| n * Magick::QuantumRange }
-          #   image = image.levelize_channel(*levels)
-          # end
+          if @ink_limits && (limit = @ink_limits[channel]) && limit != 1
+            ;;warn "\t" + "#{channel.to_s.upcase}: Applying limit of #{limit}"
+            levels = [1.0 - limit, 1.0].map { |n| n * Magick::QuantumRange }
+            image = image.levelize_channel(*levels)
+          end
           # calculate a black RGB pixel for this channel in QTR calibration mode
           black_qtr = Color::QTR.new(channel: channel, value: 0)
           black_rgb = black_qtr.to_rgb
