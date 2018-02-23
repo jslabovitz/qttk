@@ -34,6 +34,7 @@ module Quadtone
       case @type
       when :characterization
         import_from_target
+        verify_increasing_values
         set_common_white
         trim_to_limits
         @profile.ink_limits = Hash[

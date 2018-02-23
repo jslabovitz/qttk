@@ -64,6 +64,17 @@ module Quadtone
       @input_spliner = @output_spliner = nil
     end
 
+    def verify_increasing_values
+      @samples.each_with_index do |sample, i|
+        if i > 0
+          previous_sample = @samples[i - 1]
+          if sample.output_value < previous_sample.output_value
+            raise "Samples not in increasing order (#{sample.label} [#{i}]: #{sample.output_value} < #{previous_sample.output_value})"
+          end
+        end
+      end
+    end
+
     def dmin
       @samples.first.output_value
     end
