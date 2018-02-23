@@ -33,7 +33,7 @@ module Quadtone
 
       if @desired_size
         @desired_size.width = (@desired_size.width * @resolution).to_i
-        @desired_size.height = (@desired_size.heigh * @resolution).to_i
+        @desired_size.height = (@desired_size.height * @resolution).to_i
         if @desired_size.width > @page_size.imageable_width || @desired_size.height > @page_size.imageable_height
           raise "Image too large for page size (#{@page_size.name})"
         end

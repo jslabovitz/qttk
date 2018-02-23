@@ -28,6 +28,7 @@ module Quadtone
     def measure_target(options={})
       @target.measure(options)
       process_target
+      chart_target
     end
 
     def process_target
