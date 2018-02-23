@@ -4,10 +4,18 @@ module Quadtone
 
     class Characterize < Tool
 
+      attr_accessor :force
+      attr_accessor :remeasure
+      attr_accessor :channel
+
       def parse_option(option, args)
         case option
         when '--force'
           @force = true
+        when '--remeasure'
+          @remeasure = args.shift.to_i
+        when '--channel'
+          @channels = args.shift.split(',').map(&:to_sym)
         end
       end
 
@@ -18,7 +26,7 @@ module Quadtone
         when 'print'
           @profile.characterization_curveset.print_target
         when 'measure'
-          @profile.characterization_curveset.measure_target(force: @force)
+          @profile.characterization_curveset.measure_target(force: @force, remeasure: @remeasure, channels: @channels)
         when 'process'
           @profile.characterization_curveset.process_target
         when 'chart'
