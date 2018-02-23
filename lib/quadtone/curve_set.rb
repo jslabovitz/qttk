@@ -37,16 +37,16 @@ module Quadtone
         import_from_target
         verify_increasing_values
         set_common_white
-        trim_to_limits
-        @profile.ink_limits = Hash[
-          @curves.map do |curve|
-            [
-              curve.channel,
-              curve.samples.last.input.value
-            ]
-          end
-        ]
-        normalize_curves
+        # trim_to_limits
+        # @profile.ink_limits = Hash[
+        #   @curves.map do |curve|
+        #     [
+        #       curve.channel,
+        #       curve.samples.last.input.value
+        #     ]
+        #   end
+        # ]
+        # normalize_curves
         @profile.ink_partitions = partitions
       when :linearization, :test
         import_from_target
