@@ -65,6 +65,7 @@ module Quadtone
       out_file = (@profile.dir_path + @type.to_s).with_extname('.html')
       out_file.open('w') { |io| io.write(to_html) }
       ;;warn "Saved chart to #{out_file.to_s.inspect}"
+      system('qlmanage', '-p', out_file.to_s)
     end
 
     private
