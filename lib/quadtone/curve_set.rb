@@ -88,6 +88,10 @@ module Quadtone
       @curves.map(&:channel)
     end
 
+    def verify_increasing_values
+      @curves.each { |c| c.verify_increasing_values }
+    end
+
     def trim_to_limits
       @curves.each { |c| c.trim_to_limit }
     end
