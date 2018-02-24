@@ -24,7 +24,7 @@ module Quadtone
 
     def load(quad_file)
       ;;warn "reading #{quad_file}"
-      lines = Pathname.new(quad_file).open.readlines.map { |line| line.chomp.force_encoding('ISO-8859-1') }
+      lines = Path.new(quad_file).open.readlines.map { |line| line.chomp.force_encoding('ISO-8859-1') }
       # process header
       channels = parse_channel_list(lines.shift)
       channels.each do |channel|

@@ -1,5 +1,5 @@
 module Quadtone
 
-  BaseDir = Pathname.new(ENV['HOME']) + '.qttk'
+  BaseDir = Path.new(ENV['HOME']) / '.qttk'
 
 end

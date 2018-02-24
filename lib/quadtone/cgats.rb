@@ -8,7 +8,7 @@ module Quadtone
       cgats = new
       section_index = 0
       state = :header
-      Pathname.new(file).readlines.each do |line|
+      Path.new(file).readlines.each do |line|
         line.chomp!
         line.sub!(/#.*/, '')
         line.strip!

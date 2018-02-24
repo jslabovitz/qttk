@@ -26,7 +26,7 @@ module Quadtone
       end
 
       def run(*args)
-        args.map { |p| Pathname.new(p) }.each do |image_path|
+        args.map { |p| Path.new(p) }.each do |image_path|
           @profile.print_file(image_path, calibrate: @calibrate, printer_options: @printer_options)
         end
       end

@@ -139,7 +139,8 @@ module Quadtone
     def sample_image(size)
       ;;warn "\t" + "generating sample image of size #{size.inspect}"
       bounds = Magick::Rectangle.new(*size, 0, 0)
-      ilist = Magick::ImageList.new(Pathname.new(ENV['HOME']) + 'Desktop' + '121213b.01.tif')
+      file = Path.new(ENV['HOME']) / 'Desktop' / '121213b.01.tif'   #FIXME: parameterize
+      ilist = Magick::ImageList.new(file.to_s)
       ilist.first.resize_to_fill(*size)
     end
 
@@ -211,7 +212,7 @@ module Quadtone
     # private
 
     def base_file(channel=nil, n=nil)
-      @base_dir + (@name.to_s + (channel ? "-#{channel}" : '') + (n ? "-#{n}" : ''))
+      @base_dir / (@name.to_s + (channel ? "-#{channel}" : '') + (n ? "-#{n}" : ''))
     end
 
     def ti1_file(channel)
@@ -235,19 +236,19 @@ module Quadtone
     end
 
     def ti_files
-      Pathname.glob(base_file.with_extname('*.ti[123]'))
+      Path.glob(base_file.with_extname('*.ti[123]'))
     end
 
     def ti2_files(channel)
-      Pathname.glob(base_file(channel).with_extname('*.ti2'))
+      Path.glob(base_file(channel).with_extname('*.ti2'))
     end
 
     def ti3_files(channel)
-      Pathname.glob(base_file(channel).with_extname('*.ti3'))
+      Path.glob(base_file(channel).with_extname('*.ti3'))
     end
 
     def image_files
-      Pathname.glob(base_file.with_extname('*.tif'))
+      Path.glob(base_file.with_extname('*.tif'))
     end
 
     def cleanup_files(files)
@@ -261,7 +262,7 @@ module Quadtone
           files += image_files
         when :ti
           files += ti_files
-        when Pathname
+        when Path
           if file.exist?
             # ;;warn "\t" + file
             file.unlink

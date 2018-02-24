@@ -34,7 +34,7 @@ module Quadtone
 
     def get_inks
       # FIXME: It would be nice to get this path programmatically.
-      ppd_file = Pathname.new("/etc/cups/ppd/#{@name}.ppd")
+      ppd_file = Path.new("/etc/cups/ppd/#{@name}.ppd")
       ppd_file.readlines.each do |line|
         if line =~ /^\*%Inks\s*(.*?)\s*$/
           @inks = $1.split(/,/).map(&:downcase).map(&:to_sym)

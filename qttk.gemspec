@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
 
   s.add_dependency 'builder'
-  s.add_dependency 'pathname3'
+  s.add_dependency 'path'
   s.add_dependency 'rmagick'
   s.add_dependency 'ffi'
   s.add_dependency 'cupsffi'

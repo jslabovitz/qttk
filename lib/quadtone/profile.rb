@@ -18,11 +18,11 @@ module Quadtone
     attr_accessor :linearization_curveset
     attr_accessor :test_curveset
 
-    ProfilesDir = BaseDir + 'profiles'
+    ProfilesDir = BaseDir / 'profiles'
     ProfileName = 'profile.txt'
 
     def self.profile_names
-      Pathname.glob(ProfilesDir + '*').select { |p| p.directory? && p[0] != '.' }.map(&:basename)
+      Path.glob(ProfilesDir / '*').select { |p| p.directory? && p[0] != '.' }.map(&:basename).map(&:to_s)
     end
 
     def self.load(name)
@@ -52,7 +52,7 @@ module Quadtone
 
     def load(name)
       inks_by_num = []
-      (ProfilesDir + name + ProfileName).readlines.each do |line|
+      (ProfilesDir / name / ProfileName).readlines.each do |line|
         line.chomp!
         line.sub!(/#.*/, '')
         line.strip!
@@ -130,15 +130,15 @@ module Quadtone
     end
 
     def dir_path
-      ProfilesDir + name
+      ProfilesDir / name
     end
 
     def qtr_profile_path
-      dir_path + ProfileName
+      dir_path / ProfileName
     end
 
     def quad_file_path
-      Pathname.new('/Library/Printers/QTR/quadtone') + @printer.name + "#{name}.quad"
+      Path.new('/Library/Printers/QTR/quadtone') / @printer.name / "#{name}.quad"
     end
 
     def ink_limit(ink)
@@ -148,9 +148,9 @@ module Quadtone
     def install
       # filename needs to match name of profile for quadprofile to install it properly,
       # so temporarily make a symlink
-      tmp_file = Pathname.new('/tmp') + "#{name}.txt"
-      qtr_profile_path.symlink(tmp_file)
-      system('/Library/Printers/QTR/bin/quadprofile', tmp_file)
+      tmp_file = Path.new('/tmp') / "#{name}.txt"
+      qtr_profile_path.symlink(tmp_file.to_s)
+      system('/Library/Printers/QTR/bin/quadprofile', tmp_file.to_s)
       tmp_file.unlink
     end
 

@@ -2,7 +2,7 @@
 require 'pp'
 
 # gems
-require 'pathname3'
+require 'path'
 require 'rvg/rvg'     # loads 'rmagick'
 require 'builder'
 require 'cupsffi'
@@ -26,7 +26,6 @@ require 'quadtone/curve_set'
 require 'quadtone/descendants'
 require 'quadtone/environment'
 require 'quadtone/extensions/math'
-require 'quadtone/extensions/pathname3'
 require 'quadtone/printer'
 require 'quadtone/profile'
 require 'quadtone/quad_file'

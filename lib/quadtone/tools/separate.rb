@@ -22,12 +22,12 @@ module Quadtone
       def run(image_file=nil)
 
         if @gradient
-          image_file = Pathname.new('gradient.tif')
+          image_file = Path.new('gradient.tif')
           image = Magick::Image.new(200, 200, Magick::GradientFill.new(0, 0, 0, 200, 'white', 'black'))
         else
           raise ToolUsageError, "Must specify image file (or --gradient option)" unless image_file
-          image_file = Pathname.new(image_file)
-          image = Magick::Image.read(image_file).first
+          image_file = Path.new(image_file)
+          image = Magick::Image.read(image_file.to_s).first
         end
 
         quad = QuadFile.new(@profile)
@@ -51,7 +51,7 @@ module Quadtone
           images.each do |channel, separated_image|
             separated_image_file = image_file.with_extname(".#{@profile.name}.sep-#{channel}.tif")
             ;;warn "writing channel #{channel} of separated file to #{separated_image_file}"
-            separated_image.write(separated_image_file) { self.compression = Magick::ZipCompression }
+            separated_image.write(separated_image_file.to_s) { self.compression = Magick::ZipCompression }
           end
         end
 

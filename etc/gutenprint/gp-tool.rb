@@ -2,33 +2,33 @@ require 'quadtone'
 include Quadtone
 
 module Quadtone
-  
+
   class GPTool < Tool
-    
+
     attr_accessor :printer
-    
+
     def parse_option(option, args)
       case option
       when '--printer', '-p'
         @printer = args.shift
       end
     end
-  
+
     def run(image_file)
-      image_file = Pathname.new(image_file)
-      
+      image_file = Path.new(image_file)
+
       raise "Must specify printer with --printer" unless @printer
 
       gp = Gutenprint.new(@printer)
-      
+
       gp_channels = gp.channels
 
       geometry = gp.geometry
       width = geometry[:width]
       height = geometry[:height]
 
-      ;;warn "[reading #{image_file}]"      
-      image_list = Magick::ImageList.new(image_file)
+      ;;warn "[reading #{image_file}]"
+      image_list = Magick::ImageList.new(image_file.to_s)
       # ;;warn "[rotating]"
       # ;;image_list.rotate!(90)
       # ;;warn "[scaling]"
@@ -51,6 +51,6 @@ module Quadtone
         end
       end
     end
-  
+
   end
 end

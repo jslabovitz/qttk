@@ -16,19 +16,19 @@ module Quadtone
           raise ToolUsageError, "Printer #{printer.inspect} already exists"
         end
 
-        curves_dir          = Pathname.new('/Library/Printers/QTR/quadtone') + printer
-        cups_data_dir       = Pathname.new(%x{cups-config --datadir}.chomp)
-        cups_serverbin_dir  = Pathname.new(%x{cups-config --serverbin}.chomp)
+        curves_dir          = Path.new('/Library/Printers/QTR/quadtone') / printer
+        cups_data_dir       = Path.new(%x{cups-config --datadir}.chomp)
+        cups_serverbin_dir  = Path.new(%x{cups-config --serverbin}.chomp)
 
         model = printer.split(/[-_=]/).first
         model_ppd = "C/#{model}.ppd.gz"
-        ppd_file = cups_data_dir + 'model' + model_ppd
+        ppd_file = cups_data_dir / 'model' + model_ppd
 
         raise "QuadToneRIP does not support printer model #{model.inspect}" unless ppd_file.exist?
 
         uri = loc = nil
 
-        File.popen(cups_serverbin_dir + 'backend' + 'usb').readlines.each do |line|
+        File.popen(cups_serverbin_dir / 'backend' / 'usb').readlines.each do |line|
           #FIXME: Too fragile -- use 'lpinfo' to find all printers
           if line =~ /(usb:.*EPSON.*#{Regexp.escape(model.sub(/^Quad/, ''))})/
             uri = $1

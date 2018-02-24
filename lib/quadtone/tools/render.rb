@@ -30,7 +30,7 @@ module Quadtone
         options.merge!(page_size: @page_size) if @page_size
         options.merge!(desired_size: @desired_size) if @desired_size
         renderer = Renderer.new(options)
-        args.map { |p| Pathname.new(p) }.each do |input_path|
+        args.map { |p| Path.new(p) }.each do |input_path|
           output_paths = renderer.render(input_path)
           ;;warn "\t" + "Wrote rendered file to #{output_paths.join(', ')}"
         end
