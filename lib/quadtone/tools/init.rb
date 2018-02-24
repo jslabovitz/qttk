@@ -20,6 +20,7 @@ module Quadtone
 
       def get_printer
         printers = CupsPrinter.get_all_printer_names.map { |n| Printer.new(n) }.select(&:quadtone?)
+        raise "No quadtone printers" if printers.empty?
         @printer = prompt('Printer', printers, printers[0]) { |p| p.name }
       end
 
