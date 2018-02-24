@@ -1,12 +1,8 @@
-# -*- encoding: utf-8 -*-
-
-$LOAD_PATH << File.expand_path('../lib', __FILE__)
-
-# require 'qttk/version'
+require_relative 'lib/quadtone/version'
 
 Gem::Specification.new do |s|
   s.name        = 'qttk'
-  s.version     = '0.1.0'   # QTTK::VERSION
+  s.version     = Quadtone::VERSION
   s.author      = 'John Labovitz'
   s.email       = 'johnl@johnlabovitz.com'
   s.homepage    = 'http://github.com/jslabovitz/qttk'
@@ -18,17 +14,17 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
-  s.require_paths = ['lib']
+  s.require_path  = 'lib'
 
-  s.add_dependency 'builder'
-  s.add_dependency 'path'
-  s.add_dependency 'rmagick'
-  s.add_dependency 'ffi'
-  s.add_dependency 'cupsffi'
-  s.add_dependency 'hashstruct'
-  s.add_dependency 'descriptive_statistics'
-  s.add_dependency 'spliner'
+  s.add_dependency 'builder', '~> 3.2'
+  s.add_dependency 'path', '~> 2.0'
+  s.add_dependency 'rmagick', '~> 2.16'
+  s.add_dependency 'ffi', '~> 1.9'
+  s.add_dependency 'cupsffi', '~> 0.1'
+  s.add_dependency 'hashstruct', '~> 1.3'
+  s.add_dependency 'descriptive_statistics', '~> 2.5'
+  s.add_dependency 'spliner', '~> 1.0'
 
-  # s.add_development_dependency 'minitest'
-  # s.add_development_dependency 'wrong'
+  s.add_development_dependency 'rake', '~> 12.3'
+  s.add_development_dependency 'rubygems-tasks', '~> 0.2'
 end
