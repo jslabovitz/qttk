@@ -10,6 +10,7 @@ Gem::Specification.new do |s|
   s.description = %q{
     Quadtone Toolkit (QTTK): Tools for working with the quadtone printing process.
   }
+  s.license       = 'MIT'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
