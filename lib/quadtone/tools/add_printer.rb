@@ -17,18 +17,19 @@ module Quadtone
         end
 
         curves_dir          = Path.new('/Library/Printers/QTR/quadtone') / printer
-        cups_data_dir       = Path.new(%x{cups-config --datadir}.chomp)
+        ppds_dir            = Path.new('/Library/Printers/PPDs/Contents/Resources')
         cups_serverbin_dir  = Path.new(%x{cups-config --serverbin}.chomp)
+        cups_backend_usb_tool = cups_serverbin_dir / 'backend' / 'usb'
 
         model = printer.split(/[-_=]/).first
-        model_ppd = "C/#{model}.ppd.gz"
-        ppd_file = cups_data_dir / 'model' + model_ppd
+        model_ppd = "#{model}.ppd.gz"
+        ppd_file = ppds_dir / model_ppd
 
         raise "QuadToneRIP does not support printer model #{model.inspect}" unless ppd_file.exist?
 
         uri = loc = nil
 
-        File.popen(cups_serverbin_dir / 'backend' / 'usb').readlines.each do |line|
+        File.popen(cups_backend_usb_tool.to_s).readlines.each do |line|
           #FIXME: Too fragile -- use 'lpinfo' to find all printers
           if line =~ /(usb:.*EPSON.*#{Regexp.escape(model.sub(/^Quad/, ''))})/
             uri = $1
