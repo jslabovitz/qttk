@@ -22,7 +22,7 @@ module Quadtone
     ProfileName = 'profile.txt'
 
     def self.profile_names
-      Path.glob(ProfilesDir / '*').select { |p| p.directory? && p[0] != '.' }.map(&:basename).map(&:to_s)
+      ProfilesDir.children.select { |p| p.directory? && p.basename.to_s[0] != '.' }.map(&:basename).map(&:to_s)
     end
 
     def self.load(name)
