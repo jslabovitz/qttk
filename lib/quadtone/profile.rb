@@ -141,6 +141,10 @@ module Quadtone
       Path.new('/Library/Printers/QTR/quadtone') / @printer.name / "#{name}.quad"
     end
 
+    def html_path
+      dir_path / 'profile.html'
+    end
+
     def ink_limit(ink)
       @ink_limits[ink] || @default_ink_limit
     end
